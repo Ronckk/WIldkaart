@@ -1,0 +1,1 @@
+window.WOLVEN_DATA = {"updatedAt": "2026-09-19T11:46", "veluwe": {"all": [{"n": "Ermelo", "lat": 52.301537, "lon": 5.716819, "ev": [{"d": "2026-09-18", "ty": "zichtmelding", "tm": "21:11"}]}, {"n": "Ermelo", "lat": 52.306377, "lon": 5.686627, "ev": [{"d": "2025-05-22", "ty": "zichtmelding", "tm": "10:33"}]}]}, "overig": []};

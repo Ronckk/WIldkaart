@@ -1,0 +1,144 @@
+/* Filterbalk, tijdschuif en hitte-laag (assets/map-tools.js). Gebruikt de kleurvariabelen van de pagina's. */
+.wdk-ex{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-bottom:10px;
+  padding:12px;
+  background:var(--map-surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+.wdk-panel{ display:block; }
+.wdk-head{
+  display:flex;
+  align-items:center;
+  gap:8px 10px;
+  list-style:none;
+  cursor:pointer;
+  user-select:none;
+}
+.wdk-head::-webkit-details-marker{ display:none; }
+.wdk-head::before{
+  content:"";
+  width:7px;
+  height:7px;
+  flex:none;
+  border-right:2px solid var(--ink-2);
+  border-bottom:2px solid var(--ink-2);
+  transform:rotate(-45deg);
+  transition:transform .15s;
+}
+.wdk-panel[open] > .wdk-head::before{ transform:rotate(45deg); }
+.wdk-title{ font-weight:600; font-size:13.5px; color:var(--ink); white-space:nowrap; }
+.wdk-badge{
+  font-family:"IBM Plex Mono", monospace;
+  font-size:9.5px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  background:var(--accent);
+  color:var(--accent-ink);
+  padding:2px 7px;
+  border-radius:99px;
+}
+.wdk-badge[hidden]{ display:none; }
+.wdk-head-sum{ margin-left:auto; font-size:12px; color:var(--muted); text-align:right; }
+.wdk-panel[open] > .wdk-head .wdk-head-sum{ display:none; } /* open: de samenvatting staat al onderaan */
+.wdk-head:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:6px; }
+.wdk-body{ display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+.wdk-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }
+.wdk-label{
+  font-family:"IBM Plex Mono", monospace;
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  color:var(--muted);
+  min-width:56px;
+}
+.wdk-chip{
+  appearance:none;
+  border:1px solid var(--border-strong);
+  background:var(--surface);
+  color:var(--ink);
+  font:inherit;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:12.5px;
+  padding:5px 12px 5px 10px;
+  border-radius:99px;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+}
+.wdk-chip[aria-pressed="false"]{ background:transparent; color:var(--muted); }
+.wdk-chip[aria-pressed="false"] .swatch{ opacity:.35; }
+.wdk-field, .wdk-check{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:12.5px;
+  color:var(--ink-2);
+}
+.wdk-check{ cursor:pointer; }
+.wdk-check input{ accent-color:var(--ink); margin:0; cursor:pointer; }
+.wdk-date{
+  font:inherit;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:13px;
+  padding:5px 8px;
+  border:1px solid var(--border-strong);
+  border-radius:8px;
+  background:var(--surface);
+  color:var(--ink);
+}
+.wdk-btn{
+  appearance:none;
+  border:1px solid var(--border-strong);
+  background:var(--surface);
+  color:var(--ink);
+  font:inherit;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:12.5px;
+  font-weight:600;
+  padding:5px 12px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.wdk-btn:hover:not(:disabled){ background:var(--tab-bg); }
+.wdk-btn:disabled{ opacity:.4; cursor:default; }
+.wdk-play{
+  appearance:none;
+  width:34px;
+  height:34px;
+  flex:none;
+  border:none;
+  border-radius:50%;
+  background:var(--accent);
+  color:var(--accent-ink);
+  font-size:12px;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.wdk-play:disabled{ opacity:.4; cursor:default; }
+.wdk-slider{ flex:1 1 160px; min-width:120px; accent-color:var(--accent); cursor:pointer; }
+.wdk-month{
+  min-width:92px;
+  font-family:"IBM Plex Mono", monospace;
+  font-size:12px;
+  font-weight:500;
+  color:var(--ink);
+}
+.wdk-foot{ justify-content:space-between; }
+.wdk-summary{ flex:1; min-width:140px; font-size:12.5px; color:var(--ink-2); text-align:center; }
+.wdk-chip:focus-visible, .wdk-btn:focus-visible, .wdk-play:focus-visible,
+.wdk-date:focus-visible, .wdk-slider:focus-visible, .wdk-check input:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+@media (max-width:640px){
+  .wdk-label{ min-width:52px; }
+  .wdk-summary{ order:3; flex-basis:100%; text-align:left; }
+  .wdk-chip, .wdk-btn{ padding-block:8px; }
+  .wdk-date{ padding-block:8px; }
+}

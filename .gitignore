@@ -1,0 +1,5 @@
+tools/.env
+tools/export/
+*.bak
+*.tmp
+.DS_Store

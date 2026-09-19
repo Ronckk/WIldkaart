@@ -1,0 +1,104 @@
+# Haalt de meldingen uit SeaTable en publiceert de site op GitHub Pages (wildkaart.rlode.nl).
+#
+#  - elke 3 uur (en met de knop "Run workflow"): sync met SeaTable; alleen als er iets nieuws is wordt er gecommit en gepubliceerd
+#  - bij elke push naar main: de site opnieuw publiceren
+#
+# Nodig (eenmalig, zie README): secret SEATABLE_API_TOKEN, en Settings > Pages > Source = "GitHub Actions".
+name: Site
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # SeaTable Cloud Free staat 3000 API-calls per maand toe; een sync kost er ~4. Elke 3 uur = ~1000 per maand.
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+
+# nooit twee syncs/publicaties tegelijk (dan zouden commits elkaar in de weg zitten)
+concurrency:
+  group: site
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Meldingen ophalen uit SeaTable
+        env:
+          SEATABLE_API_TOKEN: ${{ secrets.SEATABLE_API_TOKEN }}
+        run: python3 tools/seatable_sync.py
+
+      - name: Wijzigingen committen
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data tools/place-cache.json index.html wolven.html zwijnen.html
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Geen nieuwe meldingen."
+          else
+            git commit -m "data: meldingen bijgewerkt uit SeaTable"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # GitHub schakelt geplande workflows uit na 60 dagen zonder activiteit in de repo. Zijn er lang geen nieuwe
+      # meldingen (dus geen commits), dan zetten we af en toe een lege commit zodat de schema-run blijft leven.
+      - name: Repo actief houden
+        if: steps.commit.outputs.changed == 'false'
+        run: |
+          last=$(git log -1 --format=%ct)
+          now=$(date +%s)
+          if [ $((now - last)) -gt $((45 * 86400)) ]; then
+            git commit --allow-empty -m "chore: repo actief houden (geen nieuwe meldingen)"
+            git push
+          fi
+
+  deploy:
+    needs: sync
+    # push: altijd publiceren. Schema: alleen als de sync iets nieuws committe. Handmatig starten: altijd publiceren (na een geslaagde sync).
+    if: >-
+      always() && (
+        github.event_name == 'push' ||
+        (needs.sync.result == 'success' && (github.event_name == 'workflow_dispatch' || needs.sync.outputs.changed == 'true'))
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main   # inclusief de commit van de sync-job
+
+      # alleen wat de website nodig heeft; tools/, tests, backups en de README blijven buiten de gepubliceerde site
+      - name: Site-map samenstellen
+        run: |
+          mkdir _site
+          cp index.html wolven.html zwijnen.html _site/
+          cp -r assets data _site/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

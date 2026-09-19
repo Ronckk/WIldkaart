@@ -1,0 +1,91 @@
+{
+  "server": "https://cloud.seatable.io",
+  "tables": {
+    "zichtmeldingen": {
+      "type": "zichtmelding"
+    },
+    "aanval": {
+      "type": "aanval"
+    }
+  },
+  "columns": {
+    "plaats": [
+      "Plaats",
+      "Woonplaats",
+      "Place",
+      "Dorp",
+      "Locatie"
+    ],
+    "datum": [
+      "Datum",
+      "Date",
+      "Datum melding"
+    ],
+    "tijd": [
+      "Tijd",
+      "Time",
+      "Tijdstip"
+    ],
+    "lat": [
+      "Latitude",
+      "Lat",
+      "Breedtegraad"
+    ],
+    "lon": [
+      "Longitude",
+      "Lon",
+      "Lng",
+      "Lengtegraad"
+    ],
+    "geo": [
+      "Geolocatie",
+      "Geolocation",
+      "Kaartlocatie"
+    ],
+    "soort": [
+      "Diersoort",
+      "Soort",
+      "Species",
+      "Dier"
+    ],
+    "type": [
+      "Type",
+      "Soort melding"
+    ],
+    "regio": [
+      "Regio"
+    ],
+    "dier": [
+      "Gedode dier",
+      "Aangevallen dier",
+      "Vee"
+    ],
+    "gedood": [
+      "Aantal dood",
+      "Aantal gedood",
+      "Gedood"
+    ]
+  },
+  "default_species": "wolf",
+  "position": "exact",
+  "place_lookup": {
+    "enabled": true,
+    "max_distance_m": 5000
+  },
+  "veluwe_bbox": [
+    51.75,
+    52.55,
+    5.0,
+    6.75
+  ],
+  "output": {
+    "wolf": {
+      "file": "data/wolven-data.js",
+      "var": "WOLVEN_DATA"
+    },
+    "zwijn": {
+      "file": "data/zwijnen-data.js",
+      "var": "ZWIJNEN_DATA"
+    }
+  }
+}
