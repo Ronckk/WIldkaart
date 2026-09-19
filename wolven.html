@@ -986,8 +986,8 @@
   // ---- alles wat uit de meldingen volgt komt uit assets/site.js: verwachting, hotspots, weetjes ----
   WDK.renderForecast(document.getElementById('forecastCard'), { species:'wolf', rows:LOADED.veluwe, scope:'veluwe', updatedAt:LOADED.updatedAt });
   WDK.renderFunFacts(document.getElementById('funCard'), { rows:LOADED.veluwe });
-  WDK.renderLivestock(document.getElementById('attackAnimalsCard'), { rows:LOADED.veluwe, mode:'attacks' });
-  WDK.renderLivestock(document.getElementById('killedCard'), { rows:LOADED.veluwe, mode:'killed' });
+  WDK.renderLivestock(document.getElementById('attackAnimalsCard'), { rows:LOADED.all, mode:'attacks', where:'in heel Nederland' });
+  WDK.renderLivestock(document.getElementById('killedCard'), { rows:LOADED.all, mode:'killed', where:'in heel Nederland' });
 
   render();
 })();

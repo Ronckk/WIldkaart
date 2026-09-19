@@ -249,7 +249,7 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(len(ermelo), 2)                                     # twee exacte punten in dezelfde plaats = twee bolletjes
         self.assertEqual((ermelo[0]['lat'], ermelo[0]['lon']), (52.301537, 5.716819))   # exacte positie
         self.assertEqual(ermelo[0]['ev'], [{'d': '2026-09-18', 'ty': 'zichtmelding', 'tm': '21:11'},
-                                           {'d': '2026-09-17', 'ty': 'aanval', 'tm': '23:10', 'dier': 'Schaap', 'gedood': 3}])
+                                           {'d': '2026-09-17', 'ty': 'aanval', 'tm': '23:10', 'dieren': [{'dier': 'Schaap', 'gedood': 3}]}])
         abroad = [b for b in wolf if b['n'] == 'Onbekende locatie']
         self.assertEqual(len(abroad), 1)                                     # buiten NL: niet naar een verkeerd dorp
         _, zwijn = self.places('zwijnen-data.js')
@@ -406,6 +406,34 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(self.run_sync('--force'), 0)
         _, wolf = self.places('wolven-data.js')
         self.assertEqual(sum(len(b['ev']) for b in wolf), 4)     # zonder kolom en met required=false: alle wolf-meldingen
+
+
+    # ------------------------------------------------------------ een aanval met meerdere diersoorten (één rij)
+    def test_attack_with_several_victim_species_stays_one_report(self):
+        loc = {'lng': 5.79, 'lat': 52.40}
+        Mock.tables = {
+            'Zichtmeldingen': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), ('Verificatie', 'checkbox')], 'rows': []},
+            'Aanval': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), ('Gedode dier', 'single-select'),
+                                   ('Aantal dood', 'number'), ('Gedode dier 2', 'single-select'), ('Aantal dood 2', 'number'), ('Verificatie', 'checkbox')],
+                       'rows': [
+                           {'Dier': 'Wolf', 'Datum': '2026-09-14', 'Locatie': loc, 'Gedode dier': 'Pony', 'Aantal dood': 1,
+                            'Gedode dier 2': 'Veulen', 'Aantal dood 2': 2, 'Verificatie': True},          # twee soorten in één aanval
+                           {'Dier': 'Wolf', 'Datum': '2026-09-10', 'Locatie': loc, 'Gedode dier': 'Pink', 'Aantal dood': 1,
+                            'Gedode dier 2': None, 'Aantal dood 2': None, 'Verificatie': True},           # tweede plek leeg
+                           {'Dier': 'Wolf', 'Datum': '2026-09-09', 'Locatie': loc, 'Aantal dood 2': 4, 'Verificatie': True},  # alleen een aantal in plek 2
+                           {'Dier': 'Wolf', 'Datum': '2026-09-08', 'Locatie': loc, 'Verificatie': True},   # helemaal geen slachtoffers genoemd
+                       ]}}
+        self.geocoded = []
+        sync.pdok_reverse = lambda lat, lon, d: {'name': 'Doornspijk', 'lat': 52.4, 'lon': 5.79}
+        self.assertEqual(self.run_sync('--force'), 0)                # let op: geen 'Gedode dier 3'-kolom in deze tabel: wordt overgeslagen
+        _, wolf = self.places('wolven-data.js')
+        evs = {e['d']: e for b in wolf for e in b['ev']}
+        self.assertEqual(len(evs), 4)                                # vier aanvallen = vier meldingen, niet meer
+        self.assertEqual(evs['2026-09-14']['dieren'], [{'dier': 'Pony', 'gedood': 1}, {'dier': 'Veulen', 'gedood': 2}])
+        self.assertEqual(evs['2026-09-10']['dieren'], [{'dier': 'Pink', 'gedood': 1}])
+        self.assertEqual(evs['2026-09-09']['dieren'], [{'gedood': 4}])
+        self.assertNotIn('dieren', evs['2026-09-08'])
+        self.assertTrue(all(e['ty'] == 'aanval' for e in evs.values()))
 
 
 if __name__ == '__main__':

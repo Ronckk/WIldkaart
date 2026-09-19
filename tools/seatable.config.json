@@ -66,6 +66,24 @@
       "Gedood"
     ]
   },
+  "extra_victims": [
+    {
+      "dier": [
+        "Gedode dier 2"
+      ],
+      "gedood": [
+        "Aantal dood 2"
+      ]
+    },
+    {
+      "dier": [
+        "Gedode dier 3"
+      ],
+      "gedood": [
+        "Aantal dood 3"
+      ]
+    }
+  ],
   "verification": {
     "column": [
       "Verificatie",

@@ -443,52 +443,79 @@
   }
 
   // ---------------------------------------------------------------- vee: welke dieren, hoeveel gedood
-  // Uit de aanvalsmeldingen: `dier` (welk vee) en `gedood` (aantal) komen uit SeaTable ("Gedode dier", "Aantal dood").
-  // o: { rows:[plaatsen], mode:'attacks' | 'killed' }; een kaart zonder gegevens verbergt zichzelf.
+  // Uit de aanvalsmeldingen. Eén aanval kan meerdere diersoorten treffen: `dieren: [{ dier, gedood }, ...]` (uit SeaTable:
+  // "Gedode dier"/"Aantal dood", "Gedode dier 2"/"Aantal dood 2", ...). Oudere gegevens met losse `dier`/`gedood` werken ook.
+  function victimsOf(e){
+    if (e.dieren && e.dieren.length) return e.dieren;
+    if (e.dier || (e.gedood !== undefined && e.gedood !== null)) return [{ dier:e.dier, gedood:e.gedood }];
+    return [];
+  }
+  function joinNl(list){
+    return list.length < 2 ? list.join('') : list.slice(0, -1).join(', ') + ' en ' + list[list.length - 1];
+  }
+
+  // o: { rows:[plaatsen], mode:'attacks' | 'killed', where?:'in heel Nederland' }; een kaart zonder gegevens verbergt zichzelf.
+  //  attacks: per diersoort het aantal AANVALLEN waarbij die soort betrokken was (één aanval telt dus één keer per soort)
+  //  killed:  per diersoort het opgetelde aantal gedode dieren
   function renderLivestock(el, o){
     if (!el) return;
-    var attacks = events(o.rows).filter(function(e){ return e.ty === 'aanval'; });
-    var src = [];
-    o.rows.forEach(function(b){ b.ev.forEach(function(e){ if (e.ty === 'aanval') src.push(e); }); });
-    var byAnimal = {}, order = [], total = 0, withCount = 0, killedTotal = 0;
-    src.forEach(function(e){
-      var raw = (e.dier || '').trim(), key = raw ? normalizeText(raw) : '';
-      var isKilled = o.mode === 'killed';
-      if (isKilled){
-        if (e.gedood === undefined || e.gedood === null) return;
-        withCount++;
-        if (!(e.gedood > 0)) return;
-      }
-      var add = isKilled ? e.gedood : 1;
+    var attacks = [];
+    o.rows.forEach(function(b){ b.ev.forEach(function(e){ if (e.ty === 'aanval') attacks.push(e); }); });
+    var killedMode = o.mode === 'killed', where = o.where ? ' ' + o.where : '';
+    var byAnimal = {}, order = [], total = 0, withCount = 0, multiSpecies = false;
+    function add(key, raw, n){
       if (!byAnimal[key]){ byAnimal[key] = { label: raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'Onbekend', n:0, unknown:!raw }; order.push(key); }
-      byAnimal[key].n += add;
-      total += add;
+      byAnimal[key].n += n;
+      total += n;
+    }
+    attacks.forEach(function(e){
+      var vs = victimsOf(e), seen = {}, seenCount = 0, hasCount = false;
+      if (!vs.length) vs = [{}];  // aanval zonder opgegeven dier
+      vs.forEach(function(v){
+        var raw = (v.dier || '').trim(), key = raw ? normalizeText(raw) : '';
+        var n = (v.gedood === undefined || v.gedood === null) ? null : v.gedood;
+        if (n !== null) hasCount = true;
+        if (killedMode){
+          if (n > 0) add(key, raw, n);
+        } else if (!seen[key]){
+          seen[key] = true; seenCount++;
+          add(key, raw, 1);
+        }
+      });
+      if (killedMode && hasCount) withCount++;
+      if (!killedMode && seenCount > 1) multiSpecies = true;
     });
     var items = order.map(function(k){ return byAnimal[k]; })
       .sort(function(a, b){ return (a.unknown - b.unknown) || (b.n - a.n) || (a.label < b.label ? -1 : 1); });
-    if (!total){ el.style.display = 'none'; return; }
+    if (!attacks.length || !items.length || (killedMode && !total)){ el.style.display = 'none'; return; }
     el.style.display = '';
 
-    var top = items[0], max = Math.max.apply(null, items.map(function(i){ return i.n; }));
-    var title, sub, aria;
-    if (o.mode === 'killed'){
+    var top = items[0], max = Math.max.apply(null, items.map(function(i){ return i.n; })), title, sub, aria;
+    if (killedMode){
       title = 'Hoeveel vee is daadwerkelijk gedood?';
       sub = (attacks.length === 1
-          ? 'De geregistreerde aanvalsmelding noemt een concreet aantal gedode dieren'
-          : 'Van de ' + attacks.length + ' aanvalsmeldingen ' + (withCount === 1 ? 'noemde er 1 een' : 'noemden er ' + withCount + ' een') +
+          ? 'De geregistreerde aanvalsmelding' + where + ' noemt een concreet aantal gedode dieren'
+          : 'Van de ' + attacks.length + ' aanvalsmeldingen' + where + ' ' + (withCount === 1 ? 'noemde er 1 een' : 'noemden er ' + withCount + ' een') +
             ' concreet aantal gedode dieren') +
         ' &mdash; ' + (withCount > 1 ? 'samen ' : '') + 'minstens <b>' + total + '</b> ' + (total === 1 ? 'dier' : 'dieren') +
-        (items.length > 1 && !top.unknown ? ', het meest ' + esc(top.label.toLowerCase()) + ' (' + top.n + ')' : '') +
+        (items.length > 1 && !top.unknown && items[1].n < top.n ? ', het meest ' + esc(top.label.toLowerCase()) + ' (' + top.n + ')' : '') +
         '. Meldingen zonder genoemd aantal staan hier niet bij: dat betekent niet dat er geen dieren omkwamen, alleen dat de melding geen telling gaf.';
       aria = 'Balkdiagram: minstens aantal gedode dieren per diersoort. ';
     } else {
       title = 'Welk vee wordt aangevallen?';
-      var pct = Math.round(top.n / total * 100);
-      sub = (total === 1
-          ? 'Er is 1 aanval op vee geregistreerd' + (top.unknown ? '' : ': <b>' + esc(top.label) + '</b>')
-          : (top.unknown ? 'De ' : 'Het vaakst getroffen: <b>' + esc(top.label) + '</b> (' + pct + '% van de ') + total +
-            ' geregistreerde aanvallen op vee' + (top.unknown ? '' : ')')) +
-        '. De balken tonen het aantal aanvalsmeldingen per diersoort.';
+      var named = items.filter(function(i){ return !i.unknown; }).map(function(i){ return '<b>' + esc(i.label) + '</b>'; });
+      if (attacks.length === 1){
+        sub = 'Er is 1 aanval op vee' + where + ' geregistreerd' + (named.length ? ': ' + joinNl(named) : '');
+      } else if (top.unknown){
+        sub = 'De ' + attacks.length + ' geregistreerde aanvallen op vee' + where + '.';
+      } else if (items.length > 1 && items[1].n === top.n){  // gelijke stand: geen "vaakst getroffen" verzinnen
+        sub = 'Getroffen diersoorten: ' + joinNl(named) + ' (' + attacks.length + ' geregistreerde aanvallen op vee' + where + ')';
+      } else {
+        sub = 'Het vaakst getroffen: <b>' + esc(top.label) + '</b> (' + Math.round(top.n / attacks.length * 100) + '% van de ' + attacks.length +
+          ' geregistreerde aanvallen op vee' + where + ')';
+      }
+      sub += '. De balken tonen het aantal aanvalsmeldingen per diersoort' +
+        (multiSpecies ? '; bij een aanval kunnen meerdere diersoorten zijn getroffen, dus de balken kunnen samen meer zijn dan het aantal aanvallen' : '') + '.';
       aria = 'Balkdiagram: aantal aanvallen per diersoort. ';
     }
     var rows = items.map(function(it, i){

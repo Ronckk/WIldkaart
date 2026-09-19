@@ -241,7 +241,7 @@ def resolve_columns(cols, spec):
 
 
 def read_table(sea_rows, tmeta, table_cfg, cfg, warn):
-    """Zet de rijen van één tabel om naar (records, aantal_wachtend). Record = {species, place, d, tm, ty, lat, lon, regio, dier, gedood}.
+    """Zet de rijen van één tabel om naar (records, aantal_wachtend). Record = {species, place, d, tm, ty, lat, lon, regio, dieren}.
     `place` is leeg als de tabel geen plaatsnaam heeft; die wordt later uit de coördinaten opgezocht.
     Alleen rijen waarvan de verificatie-checkbox is aangevinkt komen op de site; de rest wacht op controle."""
     name = tmeta['name']
@@ -258,6 +258,12 @@ def read_table(sea_rows, tmeta, table_cfg, cfg, warn):
                         'Zet de juiste kolomnaam in tools/seatable.config.json (onder "columns" of onder de tabel).'
                         % (name, 'datum' if not m['datum'] else 'plaats of coördinaten',
                            ', '.join('%s (%s)' % (c['name'], c.get('type', '?')) for c in tmeta['columns'])))
+    # slachtoffers: de gewone kolommen (dier/gedood) plus optionele extra paren ("Gedode dier 2" / "Aantal dood 2", ...)
+    slots = [(m['dier'], m['gedood'])]
+    for extra in cfg.get('extra_victims', []):
+        em = resolve_columns(tmeta['columns'], extra)
+        slots.append((em['dier'], em['gedood']))
+    slots = [(d, g) for d, g in slots if d or g]
     vcfg = cfg.get('verification', {})
     vcol = resolve_columns(tmeta['columns'], {'v': vcfg['column']})['v'] if vcfg.get('column') else None
     if vcfg.get('column') and not vcol and vcfg.get('required', True):
@@ -292,11 +298,20 @@ def read_table(sea_rows, tmeta, table_cfg, cfg, warn):
         rec = {'species': species, 'place': place, 'd': d, 'tm': tm,
                'ty': norm_type(row.get(m['type']) if m['type'] else None, default_type),
                'lat': lat, 'lon': lon, 'regio': norm(as_text(row.get(m['regio']))) if m['regio'] else ''}
-        if m['dier'] and as_text(row.get(m['dier'])):
-            rec['dier'] = as_text(row.get(m['dier']))
-        g = to_float(row.get(m['gedood'])) if m['gedood'] else None
-        if g is not None:
-            rec['gedood'] = int(g) if g == int(g) else g
+        dieren = []
+        for dcol, gcol in slots:
+            dier = as_text(row.get(dcol)) if dcol else ''
+            g = to_float(row.get(gcol)) if gcol else None
+            if not dier and g is None:
+                continue  # lege plek in het formulier
+            v = {}
+            if dier:
+                v['dier'] = dier
+            if g is not None:
+                v['gedood'] = int(g) if g == int(g) else g
+            dieren.append(v)
+        if dieren:
+            rec['dieren'] = dieren
         recs.append(rec)
     if skipped:
         warn('Tabel "%s": %d rij(en) zonder geldige datum of zonder plaats/coördinaten overgeslagen.' % (name, skipped))
@@ -434,9 +449,8 @@ def build_species(recs, cfg, known, warn):
         e = {'d': r['d'], 'ty': r['ty']}
         if r['tm']:
             e['tm'] = r['tm']
-        for k in ('dier', 'gedood'):
-            if k in r:
-                e[k] = r[k]
+        if 'dieren' in r:
+            e['dieren'] = r['dieren']
         g['ev'].append(e)
     veluwe, overig = [], []
     for key, g in groups.items():
@@ -601,7 +615,8 @@ def cmd_export_legacy(cfg, root, outdir):
             for e in b.get('ev', []):
                 base = [b['n'], e['d'], e.get('tm', ''), b['lat'], b['lon'], species]
                 if e['ty'] == 'aanval':
-                    aanval.append(base + [e.get('dier', ''), e.get('gedood', '')])
+                    first = (e.get('dieren') or [{}])[0]  # de export kent één slachtoffer-paar per aanval
+                    aanval.append(base + [first.get('dier', ''), first.get('gedood', '')])
                 else:
                     zicht.append(base + [label.get(e['ty'], 'Overig')])
     head = ['Plaats', 'Datum', 'Tijd', 'Latitude', 'Longitude', 'Diersoort']

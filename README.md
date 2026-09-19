@@ -97,8 +97,12 @@ kolom `Type` mag dat overschrijven. `Tijd`, `Regio` en `Plaats` mogen erbij als 
 - **Veluwe of elders:** volgt uit een `Regio`-kolom, anders uit de rechthoek `veluwe_bbox` in de config (die
   reproduceert de oude indeling precies).
 - **Vee:** de kaarten "Welk vee wordt aangevallen?" en "Hoeveel vee is daadwerkelijk gedood?" op de wolvenpagina worden
-  berekend uit `Gedode dier` en `Aantal dood` van de aanvalsmeldingen; zonder aanvallen (of zonder die gegevens) verbergen
-  ze zichzelf.
+  berekend uit de aanvalsmeldingen (heel Nederland, dus ook aanvallen buiten de Veluwe); zonder aanvallen (of zonder
+  die gegevens) verbergen ze zichzelf. Eén aanval kan meerdere diersoorten treffen: vul in het formulier `Gedode dier` +
+  `Aantal dood` in, en eventueel `Gedode dier 2` + `Aantal dood 2` (en `... 3`, als je die kolommen toevoegt; zie
+  `extra_victims` in de config). Het blijft **één** aanval; de kaart "Welk vee" telt die aanval bij elke betrokken
+  soort, en "Hoeveel gedood" telt de aantallen per soort op. Gebruik voor dezelfde soort steeds dezelfde keuzewaarde
+  (bv. "Pony" of "Veulen", niet door elkaar), anders zijn het aparte balken.
 - Twee dezelfde plaatsnamen op verschillende plekken zijn twee stippen; de website houdt ze uit elkaar met een intern
   `id`.
 
