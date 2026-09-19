@@ -141,6 +141,21 @@ def latlon_from(value):
     return lat, lon
 
 
+def fix_coords(lat, lon, box):
+    """Breedte en lengte worden soms omgewisseld ingevoerd (lat 5.6 / lng 52.3 in plaats van 52.3 / 5.6). Ligt het punt niet in `box`
+    [lat_min, lat_max, lon_min, lon_max] maar de omgewisselde variant wel, dan draaien we ze om.
+    -> (lat, lon, 'ok' | 'swapped' | 'outside')"""
+    if lat is None or lon is None:
+        return lat, lon, 'ok'
+    def inside(a, b):
+        return box[0] <= a <= box[1] and box[2] <= b <= box[3]
+    if inside(lat, lon):
+        return lat, lon, 'ok'
+    if inside(lon, lat):
+        return lon, lat, 'swapped'
+    return lat, lon, 'outside'
+
+
 def norm_type(v, default):
     t = norm(as_text(v))
     if not t:
@@ -286,6 +301,12 @@ def read_table(sea_rows, tmeta, table_cfg, cfg, warn):
         lon = to_float(row.get(m['lon'])) if m['lon'] else None
         if lat is None or lon is None:
             lat, lon = latlon_from(gval)
+        lat, lon, coord_state = fix_coords(lat, lon, cfg.get('coords_box', [49.0, 55.0, 2.0, 9.0]))
+        if coord_state == 'swapped':
+            warn('Tabel "%s": de melding van %s had omgewisselde coördinaten (breedtegraad en lengtegraad staan andersom); automatisch '
+                 'gecorrigeerd naar %.4f, %.4f. Corrigeer het ook in SeaTable.' % (name, d or '?', lat, lon))
+        elif coord_state == 'outside':
+            warn('Tabel "%s": de melding van %s ligt ver buiten Nederland (%.4f, %.4f); controleer de locatie in SeaTable.' % (name, d or '?', lat, lon))
         place = re.sub(r'\s+', ' ', as_text(row.get(m['plaats'])) if m['plaats'] else '').strip()
         if not place and isinstance(gval, dict):
             place = as_text(gval.get('city') or gval.get('title') or gval.get('district'))
@@ -301,8 +322,8 @@ def read_table(sea_rows, tmeta, table_cfg, cfg, warn):
                'lat': lat, 'lon': lon, 'regio': norm(as_text(row.get(m['regio']))) if m['regio'] else ''}
         if species == cfg.get('catch_all'):
             # de pagina Overig toont meerdere diersoorten door elkaar, dus per melding onthouden we welk dier het was
-            name = as_text(row.get(m['soort']))
-            rec['diersoort'] = name[:1].upper() + name[1:]
+            dier_naam = as_text(row.get(m['soort']))
+            rec['diersoort'] = dier_naam[:1].upper() + dier_naam[1:]
         dieren = []
         for dcol, gcol in slots:
             dier = as_text(row.get(dcol)) if dcol else ''
@@ -347,16 +368,25 @@ class PlaceLookup:
     def __init__(self, path, max_distance=5000, enabled=True):
         self.path, self.max_distance, self.enabled = path, max_distance, enabled
         self.cache, self.dirty, self.fetched, self.errors = {}, False, 0, []
+        self.negative = {}  # "geen Nederlandse woonplaats gevonden": alleen voor deze run, nooit bewaard
         if path and path.exists():
             try:
                 self.cache = json.loads(path.read_text(encoding='utf-8'))
             except ValueError:
                 self.cache = {}
+            # Een "niet gevonden" van een eerdere run kan een tijdelijke hapering van PDOK zijn (of een verkeerd ingevoerd punt), dus
+            # dat onthouden we niet: oude negatieve antwoorden worden hier opgeruimd en bij deze run opnieuw opgevraagd.
+            stale = [k for k, v in self.cache.items() if not v.get('name')]
+            for k in stale:
+                del self.cache[k]
+            self.dirty = bool(stale)
 
     def get(self, lat, lon):
         key = '%.4f,%.4f' % (lat, lon)  # ~11 m: dichterbij dan de plaatsgrenzen ooit uit elkaar liggen
         if key in self.cache:
             return self.cache[key]
+        if key in self.negative:
+            return self.negative[key]
         if not self.enabled:
             return None
         try:
@@ -366,8 +396,11 @@ class PlaceLookup:
                 self.errors.append(str(e))
             return None
         self.fetched += 1
-        self.cache[key] = res
-        self.dirty = True
+        if res.get('name'):
+            self.cache[key] = res
+            self.dirty = True
+        else:
+            self.negative[key] = res
         time.sleep(0.05)
         return res
 

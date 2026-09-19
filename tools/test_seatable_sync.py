@@ -265,7 +265,8 @@ class SyncTest(unittest.TestCase):
         n = len(self.geocoded)
         self.assertGreater(n, 0)
         self.run_sync('--force')
-        self.assertEqual(len(self.geocoded), n)                              # tweede keer: alles uit tools/place-cache.json
+        # tweede keer: alles uit tools/place-cache.json, behalve het punt buiten Nederland (een "niet gevonden" wordt nooit onthouden)
+        self.assertEqual(len(self.geocoded), n + 1)
 
     def test_town_mode_puts_one_dot_on_the_town_centre(self):
         self.real_layout()
@@ -460,6 +461,59 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(evs, [('2026-09-02', 'Ree', 'zichtmelding'), ('2026-09-03', 'Vos', 'zichtmelding')])   # Hert wacht op verificatie
         self.assertEqual(data['updatedAt'][:4], '2026')
         self.assertNotIn('diersoort', [k for b in wolf for e in b['ev'] for k in e])     # alleen op de Overig-pagina
+
+
+    # ------------------------------------------------------------ omgewisselde coördinaten en mislukte opzoekingen
+    def test_fix_coords(self):
+        box = [49.0, 55.0, 2.0, 9.0]
+        self.assertEqual(sync.fix_coords(52.3, 5.7, box), (52.3, 5.7, 'ok'))
+        self.assertEqual(sync.fix_coords(5.66, 52.35, box), (52.35, 5.66, 'swapped'))
+        self.assertEqual(sync.fix_coords(5.1279711, 52.1515898, box), (52.1515898, 5.1279711, 'swapped'))
+        self.assertEqual(sync.fix_coords(40.4, -3.7, box), (40.4, -3.7, 'outside'))       # Madrid: niet raden, wel melden
+        self.assertEqual(sync.fix_coords(None, None, box), (None, None, 'ok'))
+
+    def test_swapped_coordinates_are_corrected_and_reported(self):
+        Mock.tables = {
+            'Zichtmeldingen': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), ('Verificatie', 'checkbox')],
+                               'rows': [{'Dier': 'Wolf', 'Datum': '2026-09-18T16:00:00+02:00', 'Locatie': {'lat': 5.6558578, 'lng': 52.3493864}, 'Verificatie': True},
+                                        {'Dier': 'Wolf', 'Datum': '2026-09-17', 'Locatie': {'lat': 52.30, 'lng': 5.70}, 'Verificatie': True}]},
+            'Aanval': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), ('Verificatie', 'checkbox')], 'rows': []},
+        }
+        asked = []
+        sync.pdok_reverse = lambda lat, lon, d: asked.append((round(lat, 2), round(lon, 2))) or {'name': 'Zeewolde', 'lat': lat, 'lon': lon}
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            self.assertEqual(self.run_sync('--force'), 0)
+        self.assertIn('omgewisselde coördinaten', buf.getvalue())
+        self.assertIn('Tabel "Zichtmeldingen": de melding van 2026-09-18', buf.getvalue())   # de waarschuwing noemt de juiste tabel
+        _, wolf = self.places('wolven-data.js')
+        self.assertEqual({b['n'] for b in wolf}, {'Zeewolde'})                       # geen "Onbekende locatie"
+        self.assertTrue(all(49 < b['lat'] < 55 and 2 < b['lon'] < 9 for b in wolf))  # allebei in Nederland
+        self.assertIn((52.35, 5.66), asked)                                          # PDOK kreeg de gecorrigeerde volgorde
+
+    def test_failed_lookups_are_never_remembered(self):
+        self.real_layout()
+        calls = []
+        sync.pdok_reverse = lambda lat, lon, d: calls.append(1) or {'name': None}    # PDOK "vindt niets" (haperende dienst of punt buiten NL)
+        self.run_sync('--force')
+        cache = self.tmp / 'tools' / 'place-cache.json'
+        self.assertFalse(cache.exists() and json.loads(cache.read_text()) != {})     # niets onthouden
+        first = len(calls)
+        self.run_sync('--force')
+        self.assertEqual(len(calls), first * 2)                                     # dus de volgende run vraagt het opnieuw
+
+    def test_stale_negative_cache_entries_are_purged_and_retried(self):
+        self.real_layout()
+        cache = self.tmp / 'tools' / 'place-cache.json'
+        cache.write_text(json.dumps({'52.3015,5.7168': {'name': None}, '52.3100,5.7300': {'name': 'Ermelo', 'lat': 52.288, 'lon': 5.666}}))
+        self.geocoded = []
+        sync.pdok_reverse = lambda lat, lon, d: self.geocoded.append((round(lat, 4), round(lon, 4))) or {'name': 'Ermelo', 'lat': 52.288, 'lon': 5.666}
+        self.assertEqual(self.run_sync('--force'), 0)
+        self.assertIn((52.3015, 5.7168), self.geocoded)                              # het oude "niet gevonden" is opnieuw opgevraagd
+        self.assertNotIn((52.31, 5.73), self.geocoded)                              # het goede antwoord bleef uit de cache komen
+        self.assertTrue(all(v.get('name') for v in json.loads(cache.read_text()).values()))
 
 
 if __name__ == '__main__':

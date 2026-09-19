@@ -521,7 +521,6 @@
   table.report-table tbody tr:hover{ background:var(--tab-bg); }
   table.report-table a.rt-species{ color:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
   table.report-table a.rt-species:hover{ text-decoration:underline; }
-  table.report-table tbody tr.rt-latest{ background: rgba(235,104,52,.12); }
   table.report-table td.rt-type-zicht{ color:var(--s-zicht); }
   table.report-table td.rt-type-aanval{ color:var(--s-aanval); }
   #lastUpdateNote{ color:var(--muted); }
@@ -967,7 +966,7 @@
     tbody.innerHTML = top10.map(function(e, i){
       var typeLabel = TYPE_LABEL[e.ty] || e.ty;
       var typeClass = e.ty === 'zichtmelding' ? ' class="rt-type-zicht"' : (e.ty === 'aanval' ? ' class="rt-type-aanval"' : '');
-      return '<tr' + (i === 0 ? ' class="rt-latest"' : '') + '>' +
+      return '<tr>' +
         '<td class="rt-place" data-label="Plaats">'+nameHtml(e.place)+'</td>' +
         '<td data-label="Datum">'+fmtDate(e.d)+(e.tm ? ', '+e.tm : '')+'</td>' +
         '<td data-label="Dier"><a class="rt-species" href="'+e.species.page+'">'+e.species.emoji+' '+WDK.esc(e.diersoort || e.species.label)+'</a></td>' +

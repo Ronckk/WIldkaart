@@ -96,6 +96,12 @@
   "default_species": "wolf",
   "catch_all": "andere",
   "position": "exact",
+  "coords_box": [
+    49.0,
+    55.0,
+    2.0,
+    9.0
+  ],
   "place_lookup": {
     "enabled": true,
     "max_distance_m": 5000
