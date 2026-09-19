@@ -97,6 +97,10 @@ kolom `Type` mag dat overschrijven. `Tijd`, `Regio` en `Plaats` mogen erbij als 
   onthoudt het antwoord in `tools/place-cache.json`, dus elk punt wordt maar één keer opgevraagd. Punten die meer dan
   5 km van een Nederlandse woonplaats liggen (bv. Duitsland) heten "Onbekende locatie". Valt PDOK even uit, dan blijven
   de meldingen bewaard en draai je het script later opnieuw.
+- **Omgewisselde coördinaten:** komt een punt buiten het gebied `coords_box` (Nederland en omgeving) uit, maar liggen breedte en
+  lengte andersom wel binnen dat gebied, dan draait de sync ze om en zet een waarschuwing in de log (corrigeer het ook in
+  SeaTable). Ligt een punt ver buiten het gebied in beide richtingen, dan wordt het alleen gemeld. Een "niet gevonden" van
+  PDOK wordt nooit in `tools/place-cache.json` onthouden, dus een tijdelijke hapering blijft niet hangen.
 - **Positie:** `"position": "exact"` (nu ingesteld) zet de stip op de exacte gemelde plek; meldingen op hetzelfde punt
   tellen samen. Zet je `"position": "town"`, dan komt er één stip per plaats op het middelpunt van die plaats: geen
   exacte GPS-locatie op de kaart (de voettekst van de site belooft dat nu niet meer bij "exact"; bij aanvallen op vee
@@ -124,6 +128,16 @@ op één plek: `FORMS` bovenin `assets/site.js`. De knoppen staan op de homepage
 wolvenpagina (onder de kaart, beide knoppen) en op de zwijnenpagina (onder de kaart, alleen de zichtmelding); ook de
 oproep in de "nog te weinig meldingen"-kaart linkt naar het formulier. Verandert een formulieradres, pas dan alleen
 `FORMS` aan. Nieuwe inzendingen wachten op jouw vinkje in de kolom `Verificatie` (zie hierboven).
+
+## Menubalk en voettekst
+
+De menubalk en de voettekst (met een eigen achtergrondkleur over de volle breedte) staan als één sjabloon in
+`tools/build_shell.py` en worden in alle pagina's tussen de markeringen `<!-- shell:nav -->` en `<!-- shell:footer -->`
+gezet. Wijzig je iets (een link, een kolom, de tekst), pas dan het sjabloon aan en draai
+`python3 tools/build_shell.py`; de pagina's niet met de hand aanpassen. `--check` controleert alleen (en draait mee in
+`test_site_seo.py`). De opmaak staat in `assets/shell.css`; de kleur van de balken is `--bar-bg` bovenin dat bestand.
+De formulieradressen in de voettekst komen uit `FORMS` in `assets/site.js`. Pagina-eigen voetnoten (bv. de uitleg over
+plaatsnamen) staan per pagina in `PAGES` in het script.
 
 ## Vindbaarheid (SEO)
 

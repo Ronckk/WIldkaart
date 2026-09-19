@@ -36,6 +36,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <link rel="stylesheet" href="assets/map-tools.css">
+<link rel="stylesheet" href="assets/shell.css">
 <style>
   :root{
     color-scheme: light;
@@ -492,7 +493,6 @@
     padding-top:16px;
   }
   footer a{ color:var(--ink-2); }
-  .footer-links{ display:flex; flex-wrap:wrap; gap:4px 14px; }
 
   @media (max-width:640px){
     h1{ font-size:26px; }
@@ -558,8 +558,10 @@
 </style>
 
 </head>
-<body><div class="page">
-  <nav class="navbar">
+<body>
+<!-- shell:nav -->
+<header class="site-header"><div class="site-header-inner">
+  <nav class="navbar" aria-label="Hoofdmenu">
     <div class="nav-links">
       <button type="button" class="nav-link active" aria-current="page">Home</button>
       <a href="wolven" class="nav-link">Wolven</a>
@@ -571,6 +573,9 @@
       <span class="icon-sun">&#9728;&#65039;</span><span class="icon-moon">&#127769;</span>
     </button>
   </nav>
+</div></header>
+<!-- /shell:nav -->
+<div class="page">
   <header class="hero">
     <p class="eyebrow">Wilde Dieren in Kaart</p>
     <h1>Wilde dieren in Nederland, in kaart gebracht</h1>
@@ -622,11 +627,47 @@
 
   <section class="animal-card" id="forecastCard"></section>
 
-  <footer>
-    <div class="footer-links"><a href="./">Home</a><a href="wolven">Wolven</a><a href="zwijnen">Zwijnen</a><a href="overig">Overig</a><a href="over">Over deze site</a></div>
-    <div>© 2026 Wilde Dieren in Kaart &middot; Gebouwd door <a href="https://rlode.nl/" target="_blank" rel="noopener noreferrer">rlode.nl</a></div>
-  </footer>
 </div>
+<!-- shell:footer -->
+<footer class="site-footer"><div class="site-footer-inner">
+    <div class="footer-cols">
+      <div class="footer-col footer-brand">
+        <p class="fb-name">Wilde Dieren in Kaart</p>
+        <p>Gecontroleerde meldingen van wolven, zwijnen en andere wilde dieren in Nederland.</p>
+      </div>
+      <nav class="footer-col" aria-label="Kaarten">
+        <h2>Kaarten</h2>
+        <ul>
+          <li><a href="./">Home</a></li>
+          <li><a href="wolven">Wolven</a></li>
+          <li><a href="zwijnen">Zwijnen</a></li>
+          <li><a href="overig">Overig</a></li>
+        </ul>
+      </nav>
+      <nav class="footer-col" aria-label="Melden">
+        <h2>Melden</h2>
+        <ul>
+          <li><a href="https://cloud.seatable.io/dtable/forms/ddd1720d-7add-4e83-a54e-a37ec8c4fafe/" target="_blank" rel="noopener noreferrer">Meld een zichtmelding &#8599;</a></li>
+          <li><a href="https://cloud.seatable.io/dtable/forms/b4e47b67-a310-4620-a61d-384bc23393cd/" target="_blank" rel="noopener noreferrer">Meld een aanval op vee &#8599;</a></li>
+        </ul>
+      </nav>
+      <nav class="footer-col" aria-label="Over de site">
+        <h2>Over de site</h2>
+        <ul>
+          <li><a href="over">Over deze site</a></li>
+          <li><a href="over#controle">Hoe controleren we meldingen?</a></li>
+          <li><a href="over#bronnen">Waar komen de gegevens vandaan?</a></li>
+          <li><a href="over#privacy">Privacy</a></li>
+          <li><a href="over#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      <div>&copy; 2026 Wilde Dieren in Kaart &middot; Gebouwd door <a href="https://rlode.nl/" target="_blank" rel="noopener noreferrer">rlode.nl</a></div>
+      <div>Kaart: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>-bijdragers, <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a> &middot; Plaatsnamen: <a href="https://www.pdok.nl/" target="_blank" rel="noopener noreferrer">PDOK</a></div>
+    </div>
+  </div></footer>
+<!-- /shell:footer -->
 
 <script src="data/wolven-data.js?v=4e1d536555"></script>
 <script src="data/zwijnen-data.js?v=475d4fcb86"></script>

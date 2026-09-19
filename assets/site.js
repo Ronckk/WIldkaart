@@ -258,6 +258,20 @@
     return fmtDate(s.dateMin) + ' – ' + fmtDate(s.dateMax);
   }
 
+  // Regel onder de cijfers van een Veluwe-pagina: wat er buiten de Veluwe is gemeld (berekend, dus altijd actueel).
+  // o: { rows:[plaatsen buiten de Veluwe], key:'wolf', filter:{...}, where:'de Veluwe', attacks:true|false }
+  function renderScopeNote(el, o){
+    if (!el) return;
+    var s = stats(applyFilter(o.rows || [], o.key, o.filter || emptyFilter()));
+    var txt = 'Cijfers en kaart gelden voor ' + o.where + '.';
+    if (s.total){
+      txt += ' Daarbuiten: ' + meldingen(s.total) +
+        (o.attacks && s.byType.aanval ? ', waarvan ' + s.byType.aanval + (s.byType.aanval === 1 ? ' aanval' : ' aanvallen') + ' op vee' : '') +
+        ' (zie de <a href="./">landelijke kaart</a>).';
+    }
+    el.innerHTML = txt;
+  }
+
   // ---------------------------------------------------------------- weekverwachting + hotspots
   function percentile(sorted, p){
     if (!sorted.length) return 0;
@@ -775,6 +789,6 @@
     FILTER_TYPES:FILTER_TYPES, emptyFilter:emptyFilter, isEmptyFilter:isEmptyFilter, parseFilter:parseFilter, filterToParams:filterToParams,
     applyFilter:applyFilter, monthList:monthList, typesPresent:typesPresent, recentCutoff:recentCutoff,
     FORMS:FORMS, renderReportCta:renderReportCta,
-    forecast:forecast, renderForecast:renderForecast, renderFunFacts:renderFunFacts, renderLivestock:renderLivestock, renderSpeciesBars:renderSpeciesBars, renderMonthlyChart:renderMonthlyChart
+    renderScopeNote:renderScopeNote, forecast:forecast, renderForecast:renderForecast, renderFunFacts:renderFunFacts, renderLivestock:renderLivestock, renderSpeciesBars:renderSpeciesBars, renderMonthlyChart:renderMonthlyChart
   };
 })(window);

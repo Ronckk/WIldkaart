@@ -87,5 +87,27 @@ class SeoTest(unittest.TestCase):
             self.assertTrue((ROOT / f).exists(), f)
 
 
+    def test_menu_and_footer_match_the_shared_template(self):
+        import subprocess, sys
+        r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'build_shell.py'), '--check'], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_every_page_links_the_shell_stylesheet_and_has_both_blocks(self):
+        for page in list(INDEXABLE) + ['404.html']:
+            s = read(page)
+            with self.subTest(page=page):
+                self.assertIn('href="assets/shell.css"', s)
+                for marker in ('shell:nav', 'shell:footer'):
+                    self.assertEqual(s.count('<!-- %s -->' % marker), 1)
+                    self.assertEqual(s.count('<!-- /%s -->' % marker), 1)
+
+    def test_footer_form_links_match_the_forms_in_site_js(self):
+        js = read('assets/site.js')
+        footer = read('index.html')
+        for key in ('zichtmelding', 'aanval'):
+            url = re.search(r"%s:\s*\{[^}]*url:'([^']+)'" % key, js).group(1)
+            self.assertIn('href="%s"' % url, footer)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
