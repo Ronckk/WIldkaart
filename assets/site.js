@@ -473,16 +473,22 @@
     var title, sub, aria;
     if (o.mode === 'killed'){
       title = 'Hoeveel vee is daadwerkelijk gedood?';
-      sub = 'Van de ' + attacks.length + ' aanvalsmeldingen ' + (withCount === 1 ? 'noemde er 1 een' : 'noemden er ' + withCount + ' een') +
-        ' concreet aantal gedode dieren &mdash; samen minstens <b>' + total + '</b> ' + (total === 1 ? 'dier' : 'dieren') +
+      sub = (attacks.length === 1
+          ? 'De geregistreerde aanvalsmelding noemt een concreet aantal gedode dieren'
+          : 'Van de ' + attacks.length + ' aanvalsmeldingen ' + (withCount === 1 ? 'noemde er 1 een' : 'noemden er ' + withCount + ' een') +
+            ' concreet aantal gedode dieren') +
+        ' &mdash; ' + (withCount > 1 ? 'samen ' : '') + 'minstens <b>' + total + '</b> ' + (total === 1 ? 'dier' : 'dieren') +
         (items.length > 1 && !top.unknown ? ', het meest ' + esc(top.label.toLowerCase()) + ' (' + top.n + ')' : '') +
         '. Meldingen zonder genoemd aantal staan hier niet bij: dat betekent niet dat er geen dieren omkwamen, alleen dat de melding geen telling gaf.';
       aria = 'Balkdiagram: minstens aantal gedode dieren per diersoort. ';
     } else {
       title = 'Welk vee wordt aangevallen?';
       var pct = Math.round(top.n / total * 100);
-      sub = (top.unknown ? '' : 'Het vaakst getroffen: <b>' + esc(top.label) + '</b> (' + pct + '% van de ') + (top.unknown ? 'De ' : '') + total +
-        ' geregistreerde aanvallen op vee' + (top.unknown ? '' : ')') + '. De balken tonen het aantal aanvalsmeldingen per diersoort.';
+      sub = (total === 1
+          ? 'Er is 1 aanval op vee geregistreerd' + (top.unknown ? '' : ': <b>' + esc(top.label) + '</b>')
+          : (top.unknown ? 'De ' : 'Het vaakst getroffen: <b>' + esc(top.label) + '</b> (' + pct + '% van de ') + total +
+            ' geregistreerde aanvallen op vee' + (top.unknown ? '' : ')')) +
+        '. De balken tonen het aantal aanvalsmeldingen per diersoort.';
       aria = 'Balkdiagram: aantal aanvallen per diersoort. ';
     }
     var rows = items.map(function(it, i){

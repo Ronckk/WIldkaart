@@ -110,6 +110,15 @@ class SyncTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
+    @staticmethod
+    def verified(tables=None):
+        """Voegt aan elke nep-tabel de checkbox-kolom 'Verificatie' toe en vinkt alle bestaande rijen aan."""
+        for spec in (tables if tables is not None else Mock.tables).values():
+            if not any(c == 'Verificatie' for c, _ in spec['columns']):
+                spec['columns'].append(('Verificatie', 'checkbox'))
+            for row in spec['rows']:
+                row.setdefault('Verificatie', True)
+
     def run_sync(self, *extra):
         return sync.main(['--config', str(self.cfg_path), '--root', str(self.tmp), '--server', self.url] + list(extra))
 
@@ -124,6 +133,7 @@ class SyncTest(unittest.TestCase):
                                    ('Diersoort', 'single-select'), ('Dier', 'text'), ('Gedood', 'number')],
                        'rows': csv_rows(exp / 'aanval.csv')},
         }
+        self.verified()
 
     # ------------------------------------------------------------ rondje: origineel -> SeaTable -> origineel
     def test_roundtrip_reproduces_current_data(self):
@@ -158,6 +168,7 @@ class SyncTest(unittest.TestCase):
     def test_empty_tables_do_not_wipe_the_site(self):
         Mock.tables = {'zichtmeldingen': {'columns': [('Plaats', 'text'), ('Datum', 'date')], 'rows': []},
                        'aanval': {'columns': [('Plaats', 'text'), ('Datum', 'date')], 'rows': []}}
+        self.verified()
         before = (self.tmp / 'data' / 'wolven-data.js').read_bytes()
         self.assertEqual(self.run_sync(), 1)
         self.assertEqual((self.tmp / 'data' / 'wolven-data.js').read_bytes(), before)
@@ -216,6 +227,7 @@ class SyncTest(unittest.TestCase):
                                    ('Aantal dood', 'number')],
                        'rows': [{'Dier': 'Wolf', 'Datum': '2026-09-17T23:10:00+02:00', 'Locatie': first, 'Gedode dier': 'Schaap', 'Aantal dood': 3}]},
         }
+        self.verified()
         self.geocoded = []
 
         def fake(lat, lon, max_distance):
@@ -335,11 +347,65 @@ class SyncTest(unittest.TestCase):
         self.real_layout()
         self.run_sync('--force')
         zw = (self.tmp / 'data' / 'zwijnen-data.js').read_bytes()
-        Mock.tables['Zichtmeldingen']['rows'].append({'Dier': 'Wolf', 'Datum': '2026-09-20', 'Locatie': {'lng': 5.7, 'lat': 52.29}})
+        Mock.tables['Zichtmeldingen']['rows'].append({'Dier': 'Wolf', 'Datum': '2026-09-20', 'Locatie': {'lng': 5.7, 'lat': 52.29}, 'Verificatie': True})
         self.assertEqual(self.run_sync(), 0)
         data, wolf = self.places('wolven-data.js')
         self.assertEqual(sum(len(b['ev']) for b in wolf), 5)
         self.assertEqual((self.tmp / 'data' / 'zwijnen-data.js').read_bytes(), zw)   # zwijn veranderde niet
+
+
+    # ------------------------------------------------------------ moderatie: alleen aangevinkte meldingen op de site
+    def test_is_checked(self):
+        for yes in (True, 'true', 'True', 1, 'ja'):
+            self.assertTrue(sync.is_checked(yes), yes)
+        for no in (None, False, 0, '', 'false', 'nee', []):
+            self.assertFalse(sync.is_checked(no), no)
+
+    def test_unverified_reports_are_not_published(self):
+        self.real_layout()
+        rows = Mock.tables['Zichtmeldingen']['rows']
+        rows[1]['Verificatie'] = None      # nooit aangevinkt (zo komt een formulier-inzending binnen)
+        rows[3]['Verificatie'] = False     # ooit aangevinkt en weer uitgezet
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            self.assertEqual(self.run_sync('--force'), 0)
+        self.assertIn('2 wachten op verificatie', buf.getvalue())
+        _, wolf = self.places('wolven-data.js')
+        self.assertEqual(sum(len(b['ev']) for b in wolf), 2)     # 3 wolf-rijen in Zichtmeldingen - 2 onverifieerd + 1 aanval
+        published = {e['d'] for b in wolf for e in b['ev']}
+        self.assertNotIn('2026-09-19', published)                # rows[1]
+        self.assertNotIn('2026-09-01', published)                # rows[3]
+
+    def test_unchecking_removes_a_report_again(self):
+        self.real_layout()
+        self.run_sync('--force')
+        Mock.tables['Zichtmeldingen']['rows'][0]['Verificatie'] = False
+        self.assertEqual(self.run_sync(), 0)                     # 4 -> 3 meldingen: geen alarm van de beveiliging
+        _, wolf = self.places('wolven-data.js')
+        self.assertEqual(sum(len(b['ev']) for b in wolf), 3)
+        self.assertNotIn('2026-09-18', {e['d'] for b in wolf for e in b['ev'] if e['ty'] == 'zichtmelding'})
+
+    def test_missing_verification_column_stops_instead_of_publishing_everything(self):
+        self.real_layout()
+        for spec in Mock.tables.values():
+            spec['columns'] = [c for c in spec['columns'] if c[0] != 'Verificatie']
+        before = (self.tmp / 'data' / 'wolven-data.js').read_bytes()
+        self.assertEqual(self.run_sync('--force'), 1)
+        self.assertEqual((self.tmp / 'data' / 'wolven-data.js').read_bytes(), before)
+
+    def test_verification_can_be_switched_off(self):
+        self.real_layout()
+        for spec in Mock.tables.values():
+            spec['columns'] = [c for c in spec['columns'] if c[0] != 'Verificatie']
+            for row in spec['rows']:
+                row.pop('Verificatie', None)
+        self.cfg['verification']['required'] = False
+        self.cfg_path.write_text(json.dumps(self.cfg), encoding='utf-8')
+        self.assertEqual(self.run_sync('--force'), 0)
+        _, wolf = self.places('wolven-data.js')
+        self.assertEqual(sum(len(b['ev']) for b in wolf), 4)     # zonder kolom en met required=false: alle wolf-meldingen
 
 
 if __name__ == '__main__':

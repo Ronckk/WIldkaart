@@ -77,6 +77,15 @@ uit): `Dier` (Wolf/Zwijn), `Datum` (met of zonder tijd; tijdzone wordt naar Nede
 (geolocatie). Bij `Aanval` ook `Gedode dier` en `Aantal dood`. De tabel bepaalt het type (zichtmelding of aanval); een
 kolom `Type` mag dat overschrijven. `Tijd`, `Regio` en `Plaats` mogen erbij als je ze toevoegt.
 
+- **Verificatie (moderatie):** elke tabel heeft een checkbox-kolom `Verificatie`. Een melding komt pas op de site als
+  die is aangevinkt; nieuwe inzendingen via het formulier staan er dus eerst niet op en wachten op jouw controle.
+  Haal je het vinkje weg, dan verdwijnt de melding bij de volgende sync weer van de site. In de sync-log staat hoeveel
+  meldingen wachten (`1 wachten op verificatie`). Let op:
+  - Zet de kolom **niet in het formulier**, anders kan een inzender zichzelf verifiëren.
+  - Ontbreekt de kolom in een tabel, dan stopt het script met een foutmelding in plaats van alles te publiceren
+    (uit te zetten met `"required": false` onder `"verification"` in de config).
+  - Wordt door het weghalen van veel vinkjes de site plotseling veel kleiner (minder dan de helft), dan weigert de
+    beveiliging de sync; controleer dan of dat de bedoeling is en draai lokaal `--force`.
 - **Plaatsnaam:** SeaTable bewaart alleen coördinaten. Het script zoekt de woonplaats op bij PDOK (gratis, officieel) en
   onthoudt het antwoord in `tools/place-cache.json`, dus elk punt wordt maar één keer opgevraagd. Punten die meer dan
   5 km van een Nederlandse woonplaats liggen (bv. Duitsland) heten "Onbekende locatie". Valt PDOK even uit, dan blijven

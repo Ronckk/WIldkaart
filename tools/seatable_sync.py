@@ -59,6 +59,13 @@ def load_env(path):
         os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 
+def is_checked(v):
+    """Een SeaTable-checkbox is true/false, of null als hij nog nooit is aangevinkt."""
+    if isinstance(v, str):
+        return v.strip().lower() in ('true', '1', 'yes', 'ja', 'x')
+    return v is True or (isinstance(v, (int, float)) and not isinstance(v, bool) and v == 1)
+
+
 def as_text(v):
     """SeaTable geeft tekst, keuzelijsten (tekst/lijst) en koppelingen (lijst van dicts) terug."""
     if v is None:
@@ -234,8 +241,9 @@ def resolve_columns(cols, spec):
 
 
 def read_table(sea_rows, tmeta, table_cfg, cfg, warn):
-    """Zet de rijen van één tabel om naar records {species, place, d, tm, ty, lat, lon, regio, dier, gedood}.
-    `place` is leeg als de tabel geen plaatsnaam heeft; die wordt later uit de coördinaten opgezocht."""
+    """Zet de rijen van één tabel om naar (records, aantal_wachtend). Record = {species, place, d, tm, ty, lat, lon, regio, dier, gedood}.
+    `place` is leeg als de tabel geen plaatsnaam heeft; die wordt later uit de coördinaten opgezocht.
+    Alleen rijen waarvan de verificatie-checkbox is aangevinkt komen op de site; de rest wacht op controle."""
     name = tmeta['name']
     spec = dict(cfg['columns'])
     spec.update(table_cfg.get('columns', {}))
@@ -250,10 +258,19 @@ def read_table(sea_rows, tmeta, table_cfg, cfg, warn):
                         'Zet de juiste kolomnaam in tools/seatable.config.json (onder "columns" of onder de tabel).'
                         % (name, 'datum' if not m['datum'] else 'plaats of coördinaten',
                            ', '.join('%s (%s)' % (c['name'], c.get('type', '?')) for c in tmeta['columns'])))
+    vcfg = cfg.get('verification', {})
+    vcol = resolve_columns(tmeta['columns'], {'v': vcfg['column']})['v'] if vcfg.get('column') else None
+    if vcfg.get('column') and not vcol and vcfg.get('required', True):
+        raise SyncError('Tabel "%s": geen verificatiekolom gevonden (gezocht: %s). Zonder die kolom zou ALLES gepubliceerd worden, dus het script stopt.\n'
+                        'Voeg een checkbox-kolom toe, of zet de juiste naam in tools/seatable.config.json onder "verification". '
+                        'Kolommen in deze tabel: %s' % (name, ', '.join(vcfg['column']), ', '.join(c['name'] for c in tmeta['columns'])))
     default_type = table_cfg.get('type', 'zichtmelding')
     allowed = set(cfg['output'].keys())
-    recs, skipped = [], 0
+    recs, skipped, pending = [], 0, 0
     for row in sea_rows:
+        if vcol and not is_checked(row.get(vcol)):
+            pending += 1
+            continue
         d, tm = parse_when(row.get(m['datum']))
         if tm is None and m['tijd']:
             tm = parse_time(row.get(m['tijd']))
@@ -283,7 +300,7 @@ def read_table(sea_rows, tmeta, table_cfg, cfg, warn):
         recs.append(rec)
     if skipped:
         warn('Tabel "%s": %d rij(en) zonder geldige datum of zonder plaats/coördinaten overgeslagen.' % (name, skipped))
-    return recs
+    return recs, pending
 
 
 # ---------------------------------------------------------------- plaatsnaam uit coördinaten (PDOK)
@@ -521,8 +538,9 @@ def cmd_sync(sea, cfg, root, dry, force):
     recs = []
     for tname, tcfg in cfg['tables'].items():
         tmeta = find_table(meta, tname)
-        got = read_table(sea.rows(tmeta['name']), tmeta, tcfg, cfg, warn)
-        print('Tabel "%s": %d meldingen gelezen' % (tmeta['name'], len(got)))
+        got, pending = read_table(sea.rows(tmeta['name']), tmeta, tcfg, cfg, warn)
+        print('Tabel "%s": %d meldingen gelezen%s' % (tmeta['name'], len(got),
+              ', %d wachten op verificatie (niet gepubliceerd)' % pending if pending else ''))
         recs.extend(got)
     lcfg = cfg.get('place_lookup', {})
     lookup = PlaceLookup(root / 'tools' / 'place-cache.json', lcfg.get('max_distance_m', 5000), lcfg.get('enabled', True))

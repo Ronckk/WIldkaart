@@ -66,6 +66,15 @@
       "Gedood"
     ]
   },
+  "verification": {
+    "column": [
+      "Verificatie",
+      "Geverifieerd",
+      "Gecontroleerd",
+      "Verified"
+    ],
+    "required": true
+  },
   "default_species": "wolf",
   "position": "exact",
   "place_lookup": {
