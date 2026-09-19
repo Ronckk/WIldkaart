@@ -162,8 +162,12 @@ betaald plan is er meer ruimte). Voor direct verversen gebruik je de knop *Run w
    *Settings > Pages > Verified domains* (of in je account-instellingen), zodat niemand anders het kan claimen.
 5. **Eerste publicatie:** *Actions > Site > Run workflow*. Daarna draait het vanzelf.
 
+**Nette adressen:** de pagina's zijn bereikbaar als `/wolven` en `/zwijnen` (GitHub Pages voegt zelf `.html` toe); de
+links in de site en de canonieke adressen gebruiken die vorm. Oude adressen met `.html` blijven ook werken. Lokaal
+werkt dat met `python3 tools/dev_server.py` (de gewone `python3 -m http.server` kent geen adressen zonder `.html`).
+
 Handmatig bijwerken zonder GitHub kan nog steeds (`python3 tools/seatable_sync.py`, dan de HTML-pagina's en `data/`
-uploaden). Test bij voorkeur via een lokale webserver (`python3 -m http.server`) in plaats van rechtstreeks
+uploaden). Test bij voorkeur via een lokale webserver (`python3 tools/dev_server.py`) in plaats van rechtstreeks
 dubbelklikken vanaf schijf; sommige browsers blokkeren `data/*.js` via `file://` om veiligheidsredenen.
 
 ## Tegel-gebruik bij groei

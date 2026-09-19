@@ -553,8 +553,8 @@
   <nav class="navbar">
     <div class="nav-links">
       <button type="button" class="nav-link active" aria-current="page">Home</button>
-      <a href="wolven.html" class="nav-link">Wolven</a>
-      <a href="zwijnen.html" class="nav-link">Zwijnen</a>
+      <a href="wolven" class="nav-link">Wolven</a>
+      <a href="zwijnen" class="nav-link">Zwijnen</a>
       <button type="button" class="nav-link is-soon" disabled title="Binnenkort beschikbaar &mdash; we verzamelen nog data">Herten <span class="soon-tag">binnenkort</span></button>
       <button type="button" class="nav-link is-soon" disabled title="Binnenkort beschikbaar &mdash; we verzamelen nog data">Overig <span class="soon-tag">binnenkort</span></button>
     </div>
@@ -690,7 +690,7 @@
     weight: 1.4,
     dashArray: '2 5',
     fillOpacity: 0.05
-  }).addTo(map).bindPopup('<b>Veluwe</b> &mdash; bekijk de <a href="wolven.html">wolvenkaart</a> of <a href="zwijnen.html">zwijnenkaart</a>');
+  }).addTo(map).bindPopup('<b>Veluwe</b> &mdash; bekijk de <a href="wolven">wolvenkaart</a> of <a href="zwijnen">zwijnenkaart</a>');
 
   var placeIndex = {};
   PROVINCES.forEach(function(p){ placeIndex['provincie::'+p.n] = { lat:p.lat, lon:p.lon, zoom:p.zoom||9, kind:'provincie', n:p.n }; });

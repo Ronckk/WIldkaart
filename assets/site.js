@@ -31,7 +31,7 @@
   var SPECIES = {
     wolf: {
       key:'wolf', label:'Wolf', plural:'wolven', meldingLabel:'Wolvenmelding',
-      emoji:'🐺', color:'var(--pal-7)', page:'wolven.html', dataVar:'WOLVEN_DATA',
+      emoji:'🐺', color:'var(--pal-7)', page:'wolven', dataVar:'WOLVEN_DATA',
       // welke soort melding bepaalt de kleur van een plaats (eerste die voorkomt wint)
       dominantOrder:['aanval','jonkies','zichtmelding'],
       forecast:{
@@ -46,7 +46,7 @@
     },
     zwijn: {
       key:'zwijn', label:'Zwijn', plural:'zwijnen', meldingLabel:'Zwijnenmelding',
-      emoji:'🐗', color:'var(--species-zwijn)', page:'zwijnen.html', dataVar:'ZWIJNEN_DATA',
+      emoji:'🐗', color:'var(--species-zwijn)', page:'zwijnen', dataVar:'ZWIJNEN_DATA',
       dominantOrder:['aanval','jonkies','zichtmelding'],
       forecast:{
         title:'Wanneer worden zwijnen de komende weken waarschijnlijk gemeld?',
