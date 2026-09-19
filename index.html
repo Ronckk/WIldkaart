@@ -568,6 +568,8 @@
     <p class="sub">Waarnemingen en incidenten met wilde dieren in Nederland. Hieronder de meest recente meldingen, over alle bijgehouden diersoorten heen.</p>
   </header>
 
+  <section class="animal-card" id="reportCta"></section>
+
   <section class="animal-card">
     <h2 class="card-title">Net binnen gekomen meldingen</h2>
     <p class="sub" id="lastUpdateNote">Meldingen laden&hellip;</p>
@@ -994,5 +996,6 @@
 })();
 </script>
 
+<script>if (window.WDK) WDK.renderReportCta(document.getElementById('reportCta'));</script>
 </body>
 </html>

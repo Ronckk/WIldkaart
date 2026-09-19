@@ -110,6 +110,14 @@ Testen zonder SeaTable of internet: `python3 tools/test_seatable_sync.py` (nep-S
 waaronder een rondje oude data → SeaTable → site, met de bevroren oude data in `tools/fixtures/`). Tabellen en kolommen bekijken: `--inspect` (met `--sample`
 twee voorbeeldrijen). De oude data als CSV exporteren voor een import in SeaTable kan met `--export-legacy`.
 
+## Meldformulieren
+
+Bezoekers melden via twee SeaTable-formulieren ("Meld een zichtmelding" en "Meld een aanval op vee"). De adressen staan
+op één plek: `FORMS` bovenin `assets/site.js`. De knoppen staan op de homepage (onder de kop, met beide knoppen), op de
+wolvenpagina (onder de kaart, beide knoppen) en op de zwijnenpagina (onder de kaart, alleen de zichtmelding); ook de
+oproep in de "nog te weinig meldingen"-kaart linkt naar het formulier. Verandert een formulieradres, pas dan alleen
+`FORMS` aan. Nieuwe inzendingen wachten op jouw vinkje in de kolom `Verificatie` (zie hierboven).
+
 ## Filteren, afspelen, hitte-laag en delen
 
 Onder de zoekbalk van elke kaart staat een inklapbaar paneel "Filter & tijd" (open op een computer, dicht op een

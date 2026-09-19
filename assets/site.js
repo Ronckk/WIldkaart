@@ -27,6 +27,19 @@
     veluwe:  { of:'de Veluwe',      where:'op de Veluwe' }
   };
 
+  // ---------------------------------------------------------------- meldformulieren (SeaTable)
+  // De enige plek waar de formulieradressen staan; pagina's gebruiken WDK.renderReportCta() en WDK.FORMS.
+  var FORMS = {
+    zichtmelding: { label:'Meld een zichtmelding', url:'https://cloud.seatable.io/dtable/forms/ddd1720d-7add-4e83-a54e-a37ec8c4fafe/' },
+    aanval:       { label:'Meld een aanval op vee', url:'https://cloud.seatable.io/dtable/forms/b4e47b67-a310-4620-a61d-384bc23393cd/' }
+  };
+  function formLink(type, text){
+    return '<a href="' + FORMS[type].url + '" target="_blank" rel="noopener noreferrer">' + text + '</a>';
+  }
+  var REPORT_NOTE = 'Elke melding wordt eerst gecontroleerd voordat hij op de kaart komt.';
+  var DEFAULT_REPORT = { title:'Zelf iets gezien?', types:['zichtmelding', 'aanval'],
+    text:'Zag je een wild dier, of is er vee aangevallen? Geef het door via een van de formulieren. ' + REPORT_NOTE };
+
   // ---------------------------------------------------------------- diersoorten
   var SPECIES = {
     wolf: {
@@ -41,8 +54,10 @@
         hotspotTypes:['aanval'],
         hotspotHeading:'Waar is het nu het vaakst raak?',
         hotspotNoun:'aanvalsmeldingen',
-        cta:'Weet je van een wolvenmelding op de Veluwe? Geef ‘m door, dan groeit deze kaart mee.'
-      }
+        cta:'Weet je van een wolvenmelding op de Veluwe? ' + formLink('zichtmelding', 'Geef \u2018m door') + ', dan groeit deze kaart mee.'
+      },
+      report:{ title:'Wolf gezien of een aanval op vee?', types:['zichtmelding', 'aanval'],
+        text:'Geef het door via een van de formulieren. ' + REPORT_NOTE }
     },
     zwijn: {
       key:'zwijn', label:'Zwijn', plural:'zwijnen', meldingLabel:'Zwijnenmelding',
@@ -55,8 +70,10 @@
         hotspotTypes:null, // alle soorten meldingen
         hotspotHeading:'Waar wordt het nu het vaakst gemeld?',
         hotspotNoun:'meldingen',
-        cta:'Weet je van een zwijnenmelding op de Veluwe (met of zonder schade)? Geef ‘m door, dan groeit deze kaart mee.'
-      }
+        cta:'Weet je van een zwijnenmelding op de Veluwe (met of zonder schade)? ' + formLink('zichtmelding', 'Geef \u2018m door') + ', dan groeit deze kaart mee.'
+      },
+      report:{ title:'Zwijn gezien?', types:['zichtmelding'],
+        text:'Geef het door via het formulier. ' + REPORT_NOTE }
     }
   };
   var SPECIES_ORDER = ['wolf','zwijn'];
@@ -528,6 +545,18 @@
       '<div class="bar-chart" role="img" aria-label="' + esc(aria + items.map(function(i){ return i.label + ' ' + i.n; }).join(', ')) + '.">' + rows + '</div>';
   }
 
+  // ---------------------------------------------------------------- knoppen naar de meldformulieren
+  // o: { species?:'wolf'|'zwijn' }  (zonder soort: de algemene tekst met beide knoppen, voor de homepage)
+  function renderReportCta(el, o){
+    if (!el) return;
+    var cfg = (o && o.species && SPECIES[o.species] && SPECIES[o.species].report) || DEFAULT_REPORT;
+    el.innerHTML = '<h2 class="card-title">' + cfg.title + '</h2><p class="sub">' + cfg.text + '</p><div class="rc-actions">' +
+      cfg.types.map(function(t, i){
+        return '<a class="rc-btn' + (i === 0 ? ' is-primary' : '') + '" href="' + FORMS[t].url + '" target="_blank" rel="noopener noreferrer" ' +
+          'aria-label="' + FORMS[t].label + ' (opent in een nieuw tabblad)">' + FORMS[t].label + '<span class="rc-arrow" aria-hidden="true">&#8599;</span></a>';
+      }).join('') + '</div>';
+  }
+
   // ---------------------------------------------------------------- grafiek: meldingen per maand
   // series: [{ key, label, color, rows:[plaatsen] }]  ->  gestapelde staafgrafiek in `el`
   function renderMonthlyChart(el, series){
@@ -697,6 +726,7 @@
     events:events, cmpEvents:cmpEvents, recent:recent, recentLabel:recentLabel, stats:stats, periodLabel:periodLabel,
     FILTER_TYPES:FILTER_TYPES, emptyFilter:emptyFilter, isEmptyFilter:isEmptyFilter, parseFilter:parseFilter, filterToParams:filterToParams,
     applyFilter:applyFilter, monthList:monthList, typesPresent:typesPresent, recentCutoff:recentCutoff,
+    FORMS:FORMS, renderReportCta:renderReportCta,
     forecast:forecast, renderForecast:renderForecast, renderFunFacts:renderFunFacts, renderLivestock:renderLivestock, renderMonthlyChart:renderMonthlyChart
   };
 })(window);
