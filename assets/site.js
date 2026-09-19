@@ -36,14 +36,14 @@
   function formLink(type, text){
     return '<a href="' + FORMS[type].url + '" target="_blank" rel="noopener noreferrer">' + text + '</a>';
   }
-  var REPORT_NOTE = 'Elke melding wordt eerst gecontroleerd voordat hij op de kaart komt.';
+  var REPORT_NOTE = 'Elke melding wordt eerst gecontroleerd voordat hij op de kaart komt (<a href="over#controle">zo doen we dat</a>).';
   var DEFAULT_REPORT = { title:'Zelf iets gezien?', types:['zichtmelding', 'aanval'],
     text:'Zag je een wild dier, of is er vee aangevallen? Geef het door via een van de formulieren. ' + REPORT_NOTE };
 
   // ---------------------------------------------------------------- diersoorten
   var SPECIES = {
     wolf: {
-      key:'wolf', label:'Wolf', plural:'wolven', meldingLabel:'Wolvenmelding',
+      key:'wolf', label:'Wolf', plural:'wolven', mapName:'wolvenkaart', meldingLabel:'Wolvenmelding',
       emoji:'🐺', color:'var(--pal-7)', page:'wolven', dataVar:'WOLVEN_DATA',
       // welke soort melding bepaalt de kleur van een plaats (eerste die voorkomt wint)
       dominantOrder:['aanval','jonkies','zichtmelding'],
@@ -60,7 +60,7 @@
         text:'Geef het door via een van de formulieren. ' + REPORT_NOTE }
     },
     zwijn: {
-      key:'zwijn', label:'Zwijn', plural:'zwijnen', meldingLabel:'Zwijnenmelding',
+      key:'zwijn', label:'Zwijn', plural:'zwijnen', mapName:'zwijnenkaart', meldingLabel:'Zwijnenmelding',
       emoji:'🐗', color:'var(--species-zwijn)', page:'zwijnen', dataVar:'ZWIJNEN_DATA',
       dominantOrder:['aanval','jonkies','zichtmelding'],
       forecast:{
@@ -74,9 +74,26 @@
       },
       report:{ title:'Zwijn gezien?', types:['zichtmelding'],
         text:'Geef het door via het formulier. ' + REPORT_NOTE }
+    },
+    // Alle andere dieren (hert, ree, vos, ...) op één pagina; elke melding onthoudt zelf welk dier het was (`diersoort`).
+    andere: {
+      key:'andere', label:'Overig', plural:'overige dieren', mapName:'kaart met overige dieren', meldingLabel:'Melding overig dier',
+      emoji:'\uD83D\uDC3E', color:'var(--pal-5)', page:'overig', dataVar:'OVERIG_DATA',
+      dominantOrder:['aanval','jonkies','zichtmelding'],
+      forecast:{
+        title:'Wanneer worden overige dieren gemeld?',
+        noticeIntro:'Dit is <b>geen voorspelling</b>.',
+        activityPhrase:'waar het de laatste tijd het vaakst gemeld werd',
+        hotspotTypes:null,
+        hotspotHeading:'Waar wordt het nu het vaakst gemeld?',
+        hotspotNoun:'meldingen',
+        cta:'Ander dier gezien? ' + formLink('zichtmelding', 'Geef het door') + ', dan groeit deze kaart mee.'
+      },
+      report:{ title:'Ander dier gezien?', types:['zichtmelding'],
+        text:'Ree, hert, vos of een ander wild dier? Geef het door via het formulier. ' + REPORT_NOTE }
     }
   };
-  var SPECIES_ORDER = ['wolf','zwijn'];
+  var SPECIES_ORDER = ['wolf','zwijn','andere'];
 
   // ---------------------------------------------------------------- tekst & datum
   function esc(s){
@@ -200,6 +217,7 @@
     rows.forEach(function(b){
       b.ev.forEach(function(e){
         var x = { d:e.d, tm:e.tm, ty:e.ty, place:b.n, lat:b.lat, lon:b.lon };
+        if (e.diersoort) x.diersoort = e.diersoort;
         if (sp) x.species = sp;
         out.push(x);
       });
@@ -535,14 +553,44 @@
         (multiSpecies ? '; bij een aanval kunnen meerdere diersoorten zijn getroffen, dus de balken kunnen samen meer zijn dan het aantal aanvallen' : '') + '.';
       aria = 'Balkdiagram: aantal aanvallen per diersoort. ';
     }
+    el.innerHTML = '<h2 class="card-title">' + title + '</h2><p class="sub">' + sub + '</p>' + barChartHtml(items, aria);
+  }
+
+  // Balkendiagram (zelfde opmaak als de kaarten "welk vee"): items = [{ label, n, unknown? }], al gesorteerd
+  function barChartHtml(items, aria){
+    var max = Math.max.apply(null, items.map(function(i){ return i.n; }));
     var rows = items.map(function(it, i){
       return '<div class="bar-row' + (it.unknown ? ' is-unknown' : '') + '"><div class="bar-top">' +
         '<span class="bar-label" title="' + esc(it.label) + '">' + esc(it.label) + '</span>' +
         '<div class="bar-track"><div class="bar-fill" style="width:' + (it.n / max * 100).toFixed(1) + '%; --bar-color:var(--pal-' + ((i % 7) + 1) + ')"></div></div>' +
         '<span class="bar-value">' + it.n + '</span></div></div>';
     }).join('');
-    el.innerHTML = '<h2 class="card-title">' + title + '</h2><p class="sub">' + sub + '</p>' +
-      '<div class="bar-chart" role="img" aria-label="' + esc(aria + items.map(function(i){ return i.label + ' ' + i.n; }).join(', ')) + '.">' + rows + '</div>';
+    return '<div class="bar-chart" role="img" aria-label="' + esc(aria + items.map(function(i){ return i.label + ' ' + i.n; }).join(', ')) + '.">' + rows + '</div>';
+  }
+
+  // Pagina Overig: welke dieren worden gemeld? o: { rows:[plaatsen] }
+  function renderSpeciesBars(el, o){
+    if (!el) return;
+    var by = {}, order = [], total = 0;
+    o.rows.forEach(function(b){
+      b.ev.forEach(function(e){
+        var raw = (e.diersoort || '').trim(), key = raw ? normalizeText(raw) : '';
+        if (!by[key]){ by[key] = { label: raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'Onbekend', n:0, unknown:!raw }; order.push(key); }
+        by[key].n++;
+        total++;
+      });
+    });
+    if (!total){ el.style.display = 'none'; return; }
+    el.style.display = '';
+    var items = order.map(function(k){ return by[k]; })
+      .sort(function(a, b){ return (a.unknown - b.unknown) || (b.n - a.n) || (a.label < b.label ? -1 : 1); });
+    var named = items.filter(function(i){ return !i.unknown; }).map(function(i){ return '<b>' + esc(i.label) + '</b>'; });
+    var top = items[0], sub;
+    if (total === 1) sub = 'Er is 1 melding van een overig dier' + (named.length ? ': ' + joinNl(named) : '') + '.';
+    else if (top.unknown || (items.length > 1 && items[1].n === top.n)) sub = 'Gemelde dieren: ' + (named.length ? joinNl(named) : 'onbekend') + ' (' + total + ' meldingen).';
+    else sub = 'Het vaakst gemeld: <b>' + esc(top.label) + '</b> (' + Math.round(top.n / total * 100) + '% van de ' + total + ' meldingen).';
+    el.innerHTML = '<h2 class="card-title">Welke dieren worden gemeld?</h2><p class="sub">' + sub + '</p>' +
+      barChartHtml(items, 'Balkdiagram: aantal meldingen per diersoort. ');
   }
 
   // ---------------------------------------------------------------- knoppen naar de meldformulieren
@@ -727,6 +775,6 @@
     FILTER_TYPES:FILTER_TYPES, emptyFilter:emptyFilter, isEmptyFilter:isEmptyFilter, parseFilter:parseFilter, filterToParams:filterToParams,
     applyFilter:applyFilter, monthList:monthList, typesPresent:typesPresent, recentCutoff:recentCutoff,
     FORMS:FORMS, renderReportCta:renderReportCta,
-    forecast:forecast, renderForecast:renderForecast, renderFunFacts:renderFunFacts, renderLivestock:renderLivestock, renderMonthlyChart:renderMonthlyChart
+    forecast:forecast, renderForecast:renderForecast, renderFunFacts:renderFunFacts, renderLivestock:renderLivestock, renderSpeciesBars:renderSpeciesBars, renderMonthlyChart:renderMonthlyChart
   };
 })(window);

@@ -4,26 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>(function(){try{var t=localStorage.getItem('wolvenkaart-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
-<title>Zwijnenmeldingen Veluwe</title>
-<meta name="description" content="Alle zwijnenmeldingen op de Veluwe op de kaart, met een overzicht van recente meldingen.">
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
-<link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<title>Zwijnenmeldingen Veluwe op de kaart | Wilde Dieren in Kaart</title>
+<meta name="description" content="Gecontroleerde zwijnenmeldingen op de Veluwe op de kaart, met een overzicht van recente meldingen en filters per periode. Meld zelf een zwijn.">
+<meta name="robots" content="index,follow,max-image-preview:large">
 <link rel="canonical" href="https://wildkaart.rlode.nl/zwijnen">
 <meta property="og:url" content="https://wildkaart.rlode.nl/zwijnen">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Wilde Dieren in Kaart">
-<meta property="og:title" content="Zwijnenmeldingen Veluwe">
-<meta property="og:description" content="Alle zwijnenmeldingen op de Veluwe op de kaart, met een overzicht van recente meldingen.">
+<meta property="og:title" content="Zwijnenmeldingen Veluwe op de kaart | Wilde Dieren in Kaart">
+<meta property="og:description" content="Gecontroleerde zwijnenmeldingen op de Veluwe op de kaart, met een overzicht van recente meldingen en filters per periode. Meld zelf een zwijn.">
 <meta property="og:image" content="https://wildkaart.rlode.nl/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Wilde Dieren in Kaart: kaart met meldingen van wolven en zwijnen">
 <meta property="og:locale" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Zwijnenmeldingen Veluwe">
-<meta name="twitter:description" content="Alle zwijnenmeldingen op de Veluwe op de kaart, met een overzicht van recente meldingen.">
+<meta name="twitter:title" content="Zwijnenmeldingen Veluwe op de kaart | Wilde Dieren in Kaart">
+<meta name="twitter:description" content="Gecontroleerde zwijnenmeldingen op de Veluwe op de kaart, met een overzicht van recente meldingen en filters per periode. Meld zelf een zwijn.">
 <meta name="twitter:image" content="https://wildkaart.rlode.nl/assets/og-image.png">
+<meta name="theme-color" content="#f5f5f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Zwijnenmeldingen op de Veluwe", "url": "https://wildkaart.rlode.nl/zwijnen", "inLanguage": "nl", "isPartOf": {"@type": "WebSite", "name": "Wilde Dieren in Kaart", "url": "https://wildkaart.rlode.nl/", "inLanguage": "nl"}, "breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://wildkaart.rlode.nl/"}, {"@type": "ListItem", "position": 2, "name": "Zwijnen", "item": "https://wildkaart.rlode.nl/zwijnen"}]}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <link rel="stylesheet" href="assets/map-tools.css">
@@ -632,6 +641,7 @@
     padding-top:16px;
   }
   footer a{ color:var(--ink-2); }
+  .footer-links{ display:flex; flex-wrap:wrap; gap:4px 14px; }
 
   @media (max-width:640px){
     .stats{ grid-template-columns:repeat(2,1fr); }
@@ -647,7 +657,7 @@
       <a href="wolven" class="nav-link">Wolven</a>
       <button type="button" class="nav-link active" aria-current="page">Zwijnen</button>
       <button type="button" class="nav-link is-soon" disabled title="Binnenkort beschikbaar &mdash; we verzamelen nog data">Herten <span class="soon-tag">binnenkort</span></button>
-      <button type="button" class="nav-link is-soon" disabled title="Binnenkort beschikbaar &mdash; we verzamelen nog data">Overig <span class="soon-tag">binnenkort</span></button>
+      <a href="overig" class="nav-link">Overig</a>
     </div>
     <button type="button" class="theme-toggle" id="themeToggle" aria-label="Wissel tussen licht en donker">
       <span class="icon-sun">&#9728;&#65039;</span><span class="icon-moon">&#127769;</span>
@@ -656,7 +666,9 @@
   <header class="hero">
     <p class="eyebrow">Meldingen van bezoekers &middot; Veluwe</p>
     <h1>Zwijnenmeldingen op de Veluwe</h1>
+    <p class="sub">Op deze kaart staan de gecontroleerde zwijnenmeldingen op de Veluwe. Klik op een stip voor de details, filter op periode of speel de maanden af. Hoe een melding op de kaart komt, lees je op <a href="over">Over deze site</a>.</p>
   </header>
+  <noscript><div class="notice">Voor de kaart en de cijfers op deze pagina is JavaScript nodig. Schakel JavaScript in, of gebruik een andere browser.</div></noscript>
 
   <section class="stats" id="stats"></section>
 
@@ -688,7 +700,8 @@
   <section class="animal-card" id="forecastCard"></section>
 
   <footer>
-    <div>Plaatsen zijn afgeleid uit de melding zelf (dorps- of gebiedsnaam) en gekoppeld aan de reële coördinaten van die plaats — dus de positie van het gebied, geen exacte GPS-locatie per individuele melding. Meerdere meldingen op dezelfde plaats vormen samen één bolletje ter grootte van het aantal; klik erop voor de volledige lijst.</div>
+    <div class="footer-links"><a href="./">Home</a><a href="wolven">Wolven</a><a href="zwijnen">Zwijnen</a><a href="overig">Overig</a><a href="over">Over deze site</a></div>
+    <div>De plaatsnaam wordt automatisch bepaald op basis van de locatie die de melder heeft aangegeven; de stip staat op die aangegeven plek. Meerdere meldingen op precies dezelfde plek vormen samen één bolletje ter grootte van het aantal; klik erop voor de volledige lijst.</div>
     <div>© 2026 Wilde Dieren in Kaart &middot; Gebouwd door <a href="https://rlode.nl/" target="_blank" rel="noopener noreferrer">rlode.nl</a></div>
   </footer>
 </div>

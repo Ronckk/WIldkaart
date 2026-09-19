@@ -94,6 +94,7 @@
     "required": true
   },
   "default_species": "wolf",
+  "catch_all": "andere",
   "position": "exact",
   "place_lookup": {
     "enabled": true,
@@ -113,6 +114,10 @@
     "zwijn": {
       "file": "data/zwijnen-data.js",
       "var": "ZWIJNEN_DATA"
+    },
+    "andere": {
+      "file": "data/overig-data.js",
+      "var": "OVERIG_DATA"
     }
   }
 }

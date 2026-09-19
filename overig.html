@@ -4,23 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>(function(){try{var t=localStorage.getItem('wolvenkaart-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
-<title>Wolvenmeldingen Veluwe op de kaart | Wilde Dieren in Kaart</title>
-<meta name="description" content="Gecontroleerde wolvenmeldingen op de Veluwe: zichtmeldingen en aanvallen op vee op de kaart, met filter per periode, statistieken en een weekverwachting.">
+<title>Overige dieren op de kaart | Wilde Dieren in Kaart</title>
+<meta name="description" content="Gecontroleerde meldingen van andere wilde dieren, zoals ree, hert en vos, op de kaart: per dier, met filters per periode en een overzicht van recente meldingen.">
 <meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="canonical" href="https://wildkaart.rlode.nl/wolven">
-<meta property="og:url" content="https://wildkaart.rlode.nl/wolven">
+<link rel="canonical" href="https://wildkaart.rlode.nl/overig">
+<meta property="og:url" content="https://wildkaart.rlode.nl/overig">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Wilde Dieren in Kaart">
-<meta property="og:title" content="Wolvenmeldingen Veluwe op de kaart | Wilde Dieren in Kaart">
-<meta property="og:description" content="Gecontroleerde wolvenmeldingen op de Veluwe: zichtmeldingen en aanvallen op vee op de kaart, met filter per periode, statistieken en een weekverwachting.">
+<meta property="og:title" content="Overige dieren op de kaart | Wilde Dieren in Kaart">
+<meta property="og:description" content="Gecontroleerde meldingen van andere wilde dieren, zoals ree, hert en vos, op de kaart: per dier, met filters per periode en een overzicht van recente meldingen.">
 <meta property="og:image" content="https://wildkaart.rlode.nl/assets/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Wilde Dieren in Kaart: kaart met meldingen van wolven en zwijnen">
 <meta property="og:locale" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Wolvenmeldingen Veluwe op de kaart | Wilde Dieren in Kaart">
-<meta name="twitter:description" content="Gecontroleerde wolvenmeldingen op de Veluwe: zichtmeldingen en aanvallen op vee op de kaart, met filter per periode, statistieken en een weekverwachting.">
+<meta name="twitter:title" content="Overige dieren op de kaart | Wilde Dieren in Kaart">
+<meta name="twitter:description" content="Gecontroleerde meldingen van andere wilde dieren, zoals ree, hert en vos, op de kaart: per dier, met filters per periode en een overzicht van recente meldingen.">
 <meta name="twitter:image" content="https://wildkaart.rlode.nl/assets/og-image.png">
 <meta name="theme-color" content="#f5f5f3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
@@ -28,7 +28,7 @@
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Wolvenmeldingen op de Veluwe", "url": "https://wildkaart.rlode.nl/wolven", "inLanguage": "nl", "isPartOf": {"@type": "WebSite", "name": "Wilde Dieren in Kaart", "url": "https://wildkaart.rlode.nl/", "inLanguage": "nl"}, "breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://wildkaart.rlode.nl/"}, {"@type": "ListItem", "position": 2, "name": "Wolven", "item": "https://wildkaart.rlode.nl/wolven"}]}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Meldingen van overige dieren", "url": "https://wildkaart.rlode.nl/overig", "inLanguage": "nl", "isPartOf": {"@type": "WebSite", "name": "Wilde Dieren in Kaart", "url": "https://wildkaart.rlode.nl/"}, "breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://wildkaart.rlode.nl/"}, {"@type": "ListItem", "position": 2, "name": "Overig", "item": "https://wildkaart.rlode.nl/overig"}]}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
@@ -309,6 +309,7 @@
   }
   .stat.k-aanval .n{ color:var(--s-aanval); }
   .stat.k-zicht .n{ color:var(--s-zicht); }
+  .stat.k-jonkies .n{ color:var(--pal-4); }
 
   .map-card{
     background:var(--surface);
@@ -424,7 +425,6 @@
     100% { transform: scale(2.2); opacity: 0; }
   }
   .tt-name{ font-family:"IBM Plex Sans", sans-serif; font-weight:700; font-size:13.5px; margin-bottom:3px; }
-  .exact-badge{ color:var(--muted); font-weight:700; margin-left:4px; font-size:.85em; }
   .tt-row{ display:flex; justify-content:space-between; gap:10px; font-family:"IBM Plex Mono", monospace; font-size:11px; opacity:.92; }
   .tt-dates{ margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.18); font-family:"IBM Plex Mono", monospace; font-size:10.5px; opacity:.85; }
   .tt-dates div.date-row{ white-space:nowrap; }
@@ -629,9 +629,6 @@
     .search-item{ padding:11px 14px; }
     .week-strip{ grid-template-columns:repeat(3, 1fr); }
   }
-  @media (max-width:360px){
-    .week-strip{ grid-template-columns:repeat(2, 1fr); }
-  }
 
   footer{
     display:flex;
@@ -650,33 +647,6 @@
     .stats{ grid-template-columns:repeat(2,1fr); }
     h1{ font-size:26px; }
   }
-
-  #backToTop{
-    position:fixed;
-    right:20px;
-    bottom:20px;
-    z-index:50;
-    width:44px;
-    height:44px;
-    border-radius:50%;
-    border:1px solid var(--border);
-    background:var(--pal-7);
-    color:#fff;
-    font-size:18px;
-    line-height:1;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    box-shadow:var(--shadow);
-    opacity:0;
-    transform:translateY(8px);
-    pointer-events:none;
-    transition:opacity .18s ease, transform .18s ease;
-  }
-  #backToTop.is-visible{ opacity:1; transform:translateY(0); pointer-events:auto; }
-  #backToTop:hover{ filter:brightness(1.08); }
-  #backToTop:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 </style>
 </head>
 <body>
@@ -684,36 +654,32 @@
   <nav class="navbar">
     <div class="nav-links">
       <a href="./" class="nav-link">Home</a>
-      <button type="button" class="nav-link active" aria-current="page">Wolven</button>
+      <a href="wolven" class="nav-link">Wolven</a>
       <a href="zwijnen" class="nav-link">Zwijnen</a>
       <button type="button" class="nav-link is-soon" disabled title="Binnenkort beschikbaar &mdash; we verzamelen nog data">Herten <span class="soon-tag">binnenkort</span></button>
-      <a href="overig" class="nav-link">Overig</a>
+      <button type="button" class="nav-link active" aria-current="page">Overig</button>
     </div>
     <button type="button" class="theme-toggle" id="themeToggle" aria-label="Wissel tussen licht en donker">
       <span class="icon-sun">&#9728;&#65039;</span><span class="icon-moon">&#127769;</span>
     </button>
   </nav>
   <header class="hero">
-    <h1>Wolvenmeldingen op de Veluwe</h1>
-    <p class="sub">Op deze kaart staan de gecontroleerde wolvenmeldingen op de Veluwe: zichtmeldingen en aanvallen op vee. Klik op een stip voor de details, filter op periode of speel de maanden af. Hoe een melding op de kaart komt, lees je op <a href="over">Over deze site</a>.</p>
+    <p class="eyebrow">Meldingen van bezoekers &middot; Nederland</p>
+    <h1>Overige dieren op de kaart</h1>
+    <p class="sub">Op deze kaart staan de gecontroleerde meldingen van andere wilde dieren dan wolven en zwijnen, zoals ree, hert en vos. Klik op een stip om te zien om welk dier het gaat, filter op periode of speel de maanden af. Hoe een melding op de kaart komt, lees je op <a href="over">Over deze site</a>.</p>
   </header>
   <noscript><div class="notice">Voor de kaart en de cijfers op deze pagina is JavaScript nodig. Schakel JavaScript in, of gebruik een andere browser.</div></noscript>
-
-  <div class="tabs" role="tablist">
-    <button class="tab active" data-set="all" role="tab" aria-selected="true">Sinds nov 2025</button>
-    <button class="tab" data-set="last2w" role="tab" aria-selected="false">Laatste 2 weken (3&ndash;17 sep)</button>
-  </div>
 
   <section class="stats" id="stats"></section>
 
   <section class="map-card">
     <div class="map-search">
-      <input type="text" id="placeSearch" class="search-input" placeholder="Zoek een plaats&hellip; (bv. Putten, Epe)" autocomplete="off" aria-label="Zoek een plaats op de kaart">
+      <input type="text" id="placeSearch" class="search-input" placeholder="Zoek een plaats&hellip;" autocomplete="off" aria-label="Zoek een plaats op de kaart">
       <div class="search-results" id="searchResults" hidden></div>
     </div>
     <div id="explorer"></div>
     <div class="map-wrap">
-      <div id="map" role="img" aria-label="Kaart met wolvenmeldingen op de Veluwe"></div>
+      <div id="map" role="img" aria-label="Kaart met meldingen van overige dieren"></div>
       <div class="zoom-controls">
         <button type="button" id="zoomIn" aria-label="Inzoomen">+</button>
         <button type="button" id="zoomOut" aria-label="Uitzoomen">&minus;</button>
@@ -723,33 +689,25 @@
     <div class="map-foot">
       <div class="legend">
         <div class="legend-group"><span class="swatch" style="background:var(--s-zicht)"></span>Zichtmelding</div>
-        <div class="legend-group"><span class="swatch" style="background:var(--s-aanval)"></span>Aanval op vee</div>
-        <div class="legend-group"><span class="swatch" style="background:var(--s-overig)"></span>Overig (schurft / aanrijding)</div>
+        <div class="legend-group"><span class="swatch" style="background:var(--pal-4)"></span>Met jonkies gezien</div>
+        <div class="legend-group"><span class="swatch" style="background:var(--s-overig)"></span>Overig (schade / aanrijding)</div>
       </div>
     </div>
   </section>
 
+  <section class="animal-card" id="animalsCard"></section>
+
   <section class="animal-card" id="reportCta"></section>
 
-  <section class="animal-card" id="attackAnimalsCard"></section>
-
-  <section class="animal-card" id="killedCard"></section>
-
-  <section class="animal-card" id="forecastCard"></section>
-
-  <section class="animal-card" id="funCard"></section>
 
   <footer>
     <div class="footer-links"><a href="./">Home</a><a href="wolven">Wolven</a><a href="zwijnen">Zwijnen</a><a href="overig">Overig</a><a href="over">Over deze site</a></div>
-    <div id="outlierNote"></div>
-    <div>Klopt er iets niet? Laat het ons weten via <a href="over#contact">Over deze site</a>.</div>
+    <div>De plaatsnaam wordt automatisch bepaald op basis van de locatie die de melder heeft aangegeven; de stip staat op die aangegeven plek. Meerdere meldingen op precies dezelfde plek vormen samen één bolletje ter grootte van het aantal; klik erop voor de volledige lijst.</div>
     <div>© 2026 Wilde Dieren in Kaart &middot; Gebouwd door <a href="https://rlode.nl/" target="_blank" rel="noopener noreferrer">rlode.nl</a></div>
   </footer>
 </div>
 
-<button id="backToTop" type="button" aria-label="Naar boven">&uarr;</button>
-
-<script src="data/wolven-data.js?v=be131dbd69"></script>
+<script src="data/overig-data.js?v=67fe578d2a"></script>
 <script src="assets/site.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="assets/map-tools.js"></script>
@@ -783,26 +741,21 @@
     });
   }
 
-  // De plaatsen worden in assets/site.js uit de gebeurtenissen (`ev`) berekend. Type, periode, tijdschuif en
-  // hitte-laag komen uit de filterbalk (assets/map-tools.js); de tabbladen zijn snelkeuzes voor de periode.
-  var RECENT_DAYS = 14;
-  var LOADED = WDK.load('wolf');
-  var DATA = { all: LOADED.veluwe };
+  // De plaatsen worden in assets/site.js uit de gebeurtenissen (`ev`) berekend.
+  var LOADED = WDK.load('andere');
+  var DATA = { all: LOADED.all }; // heel Nederland: overige dieren hoeven niet op de Veluwe te zitten
   var placeById = {}; // id -> plaats (meerdere plaatsen kunnen dezelfde naam hebben, de id is uniek)
   DATA.all.forEach(function(b){ placeById[b.id] = b; });
-  document.querySelector('.tab[data-set="all"]').textContent = 'Sinds ' + WDK.monthYear(WDK.stats(DATA.all).dateMin);
-  document.querySelector('.tab[data-set="last2w"]').textContent = 'Laatste 2 weken (' + WDK.recentLabel(RECENT_DAYS) + ')';
 
   var COLORS = {
     zichtmelding: 'var(--s-zicht)',
-    aanval: 'var(--s-aanval)',
+    jonkies: 'var(--pal-4)',
     overig: 'var(--s-overig)'
   };
-  var TYPE_LABEL = WDK.TYPE_LABEL, fmtDate = WDK.fmtDate;
-  var stripExact = WDK.stripExact, nameHtml = WDK.nameHtml;
+  var TYPE_LABEL = WDK.TYPE_LABEL, fmtDate = WDK.fmtDate, nameHtml = WDK.nameHtml;
 
   // ---- echte kaart (Leaflet + OpenStreetMap) ----
-  var INITIAL_CENTER = [52.24, 5.85], INITIAL_ZOOM = 10;
+  var INITIAL_CENTER = [52.18, 5.30], INITIAL_ZOOM = 7;
   var map = L.map('map', { zoomControl:false, scrollWheelZoom:true }).setView(INITIAL_CENTER, INITIAL_ZOOM);
   var LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_3pk1_1_4be88f8eb009c48504d37519';
   var DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_3pk1_1_4be88f8eb009c48504d37519';
@@ -834,18 +787,17 @@
   function popupHtml(b){
     var html = '<div class="tt-name">'+nameHtml(b.n)+'</div>';
     if (b.c.zichtmelding) html += '<div class="tt-row"><span>Zichtmeldingen</span><span>'+b.c.zichtmelding+'</span></div>';
-    if (b.c.aanval) html += '<div class="tt-row"><span>Aanvallen op vee</span><span>'+b.c.aanval+'</span></div>';
+    if (b.c.jonkies) html += '<div class="tt-row"><span>Met jonkies gezien</span><span>'+b.c.jonkies+'</span></div>';
     if (b.c.overig) html += '<div class="tt-row"><span>Overig</span><span>'+b.c.overig+'</span></div>';
     var recent = b.ev.slice(0,5);
     html += '<div class="tt-dates">' + recent.map(function(e){
-      return '<div class="date-row">'+fmtDate(e.d)+(e.tm ? ', '+e.tm : '')+' &middot; '+TYPE_LABEL[e.ty]+'</div>';
+      return '<div class="date-row">'+fmtDate(e.d)+(e.tm ? ', '+e.tm : '')+' &middot; '+(e.diersoort ? WDK.esc(e.diersoort)+' &middot; ' : '')+TYPE_LABEL[e.ty]+'</div>';
     }).join('') + (b.ev.length>5 ? '<div>+ '+(b.ev.length-5)+' eerdere</div>' : '') + '</div>';
     return html;
   }
 
   function render(){
-    var f = EX.get();
-    var rows = WDK.applyFilter(DATA.all, 'wolf', f);
+    var rows = WDK.applyFilter(DATA.all, 'andere', EX.get());
     markersLayer.clearLayers();
     markerIndex = {};
     var maxCount = 1;
@@ -877,39 +829,21 @@
     var s = renderStats(rows);
     EX.setHeatPoints(rows.map(function(b){ return { lat:b.lat, lon:b.lon, w:b.t }; }));
     EX.setSummary(s.total, s.places);
-    syncTabs(f);
   }
 
   function renderStats(rows){
     var s = WDK.stats(rows);
-    var periodLabel = WDK.periodLabel(s);
     var statsEl = document.getElementById('stats');
     statsEl.innerHTML =
       '<div class="stat"><div class="n">'+s.total+'</div><div class="l">Meldingen</div></div>' +
       '<div class="stat k-zicht"><div class="n">'+s.byType.zichtmelding+'</div><div class="l">Zichtmeldingen</div></div>' +
-      '<div class="stat k-aanval"><div class="n">'+s.byType.aanval+'</div><div class="l">Aanvallen op vee</div></div>' +
-      '<div class="stat"><div class="n">'+s.places+'</div><div class="l">Plaatsen'+(periodLabel ? ' &middot; '+periodLabel : '')+'</div></div>';
+      '<div class="stat k-jonkies"><div class="n">'+s.byType.jonkies+'</div><div class="l">Met jonkies</div></div>' +
+      '<div class="stat"><div class="n">'+s.places+'</div><div class="l">Plaatsen'+(s.dateMin ? ' &middot; '+WDK.periodLabel(s) : '')+'</div></div>';
     return s;
   }
 
   // ---- filterbalk: type, periode, tijdschuif (afspelen), hitte-laag; de stand staat ook in de URL ----
   var EX = WDK.mountExplorer({ el:document.getElementById('explorer'), map:map, rows:DATA.all, onChange:render });
-
-  // de tabbladen zijn snelkeuzes voor de periode: "sinds het begin" of "laatste 2 weken"
-  function recentFrom(){ return WDK.recentCutoff(RECENT_DAYS); }
-  function syncTabs(f){
-    var which = (!f.van && !f.tot) ? 'all' : (f.van === recentFrom() && !f.tot ? 'last2w' : null);
-    document.querySelectorAll('.tab').forEach(function(t){
-      var on = t.getAttribute('data-set') === which;
-      t.classList.toggle('active', on);
-      t.setAttribute('aria-selected', on ? 'true' : 'false');
-    });
-  }
-  document.querySelectorAll('.tab').forEach(function(tab){
-    tab.addEventListener('click', function(){
-      EX.set({ van: tab.getAttribute('data-set') === 'last2w' ? recentFrom() : null, tot:null });
-    });
-  });
 
   document.getElementById('zoomIn').addEventListener('click', function(){ map.zoomIn(); });
   document.getElementById('zoomOut').addEventListener('click', function(){ map.zoomOut(); });
@@ -920,11 +854,6 @@
   var searchInput = document.getElementById('placeSearch');
   var searchResultsEl = document.getElementById('searchResults');
 
-  function mostRecentAanval(b){
-    for (var i=0;i<b.ev.length;i++){ if (b.ev[i].ty === 'aanval') return b.ev[i]; }
-    return null;
-  }
-
   function renderSearchResults(matches, q){
     if (!matches.length){
       searchResultsEl.innerHTML = '<div class="search-empty">Geen plaats gevonden voor &ldquo;'+WDK.esc(q)+'&rdquo;.</div>';
@@ -932,10 +861,7 @@
       return;
     }
     searchResultsEl.innerHTML = matches.map(function(b){
-      var ma = mostRecentAanval(b);
-      var meta = ma
-        ? '<span class="si-meta has-attack">Meest recente aanval: '+fmtDate(ma.d)+'</span>'
-        : '<span class="si-meta">Laatste melding: '+fmtDate(b.ev[0].d)+' &middot; '+TYPE_LABEL[b.ev[0].ty]+'</span>';
+      var meta = '<span class="si-meta">Laatste melding: '+fmtDate(b.ev[0].d)+' &middot; '+(b.ev[0].diersoort ? WDK.esc(b.ev[0].diersoort)+' &middot; ' : '')+TYPE_LABEL[b.ev[0].ty]+'</span>';
       return '<div class="search-item" data-id="'+WDK.esc(b.id)+'">' +
         '<span class="si-name">'+nameHtml(b.n)+'</span>' + meta +
         '</div>';
@@ -957,8 +883,8 @@
 
   function selectPlace(id){
     searchResultsEl.hidden = true;
-    searchInput.value = stripExact(placeById[id].n).base;
-    searchInput.blur(); // verberg het mobiele toetsenbord zodat de kaart zichtbaar is
+    searchInput.value = placeById[id].n;
+    searchInput.blur();
     if (!markerIndex[id]) EX.set({ types:null, van:null, tot:null }); // door het filter verborgen? dan het filter wissen
     var entry = markerIndex[id];
     if (entry){
@@ -993,40 +919,14 @@
 
   window.addEventListener('resize', function(){ map.invalidateSize(); });
 
-  if (LOADED.overig.length){
-    document.getElementById('outlierNote').textContent = 'Meldingen buiten de Veluwe (niet op deze kaart, wel op de landelijke kaart op de homepage): ' +
-      LOADED.overig.map(function(o){ return o.n + ' ('+o.t+'x)'; }).join(', ') + '.';
-  }
 
-  // ---- alles wat uit de meldingen volgt komt uit assets/site.js: verwachting, hotspots, weetjes ----
-  WDK.renderForecast(document.getElementById('forecastCard'), { species:'wolf', rows:LOADED.veluwe, scope:'veluwe', updatedAt:LOADED.updatedAt });
-  WDK.renderFunFacts(document.getElementById('funCard'), { rows:LOADED.veluwe });
-  WDK.renderLivestock(document.getElementById('attackAnimalsCard'), { rows:LOADED.all, mode:'attacks', where:'in heel Nederland' });
-  WDK.renderLivestock(document.getElementById('killedCard'), { rows:LOADED.all, mode:'killed', where:'in heel Nederland' });
+  // ---- welke dieren worden gemeld (uit assets/site.js) ----
+  WDK.renderSpeciesBars(document.getElementById('animalsCard'), { rows:LOADED.all });
 
   render();
 })();
 </script>
 
-<script>
-(function(){
-  var btn = document.getElementById('backToTop');
-  if (!btn) return;
-  var visible = false;
-  function onScroll(){
-    var shouldShow = window.scrollY > 400;
-    if (shouldShow !== visible){
-      visible = shouldShow;
-      btn.classList.toggle('is-visible', visible);
-    }
-  }
-  window.addEventListener('scroll', onScroll, { passive:true });
-  onScroll();
-  btn.addEventListener('click', function(){
-    window.scrollTo({ top:0, behavior:'smooth' });
-  });
-})();
-</script>
-<script>if (window.WDK) WDK.renderReportCta(document.getElementById('reportCta'), { species:'wolf' });</script>
+<script>if (window.WDK) WDK.renderReportCta(document.getElementById('reportCta'), { species:'andere' });</script>
 </body>
 </html>

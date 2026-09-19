@@ -44,7 +44,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data tools/place-cache.json index.html wolven.html zwijnen.html
+          git add data tools/place-cache.json index.html wolven.html zwijnen.html overig.html over.html 404.html
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "Geen nieuwe meldingen."
@@ -91,7 +91,7 @@ jobs:
       - name: Site-map samenstellen
         run: |
           mkdir _site
-          cp index.html wolven.html zwijnen.html _site/
+          cp index.html wolven.html zwijnen.html overig.html over.html 404.html robots.txt sitemap.xml _site/
           cp -r assets data _site/
 
       - uses: actions/configure-pages@v5

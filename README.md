@@ -5,7 +5,10 @@ Statisch, klaar om te hosten:
 - `index.html` — home (landelijke kaart met alle meldingen + meldingentabel)
 - `wolven.html` — wolvenmeldingen op de Veluwe
 - `zwijnen.html` — zwijnenmeldingen op de Veluwe
-- `data/wolven-data.js`, `data/zwijnen-data.js` — de meldingendata (zie hieronder)
+- `overig.html` — meldingen van alle andere dieren (ree, hert, vos, ...), heel Nederland
+- `over.html` — uitleg: wat is een melding, hoe controleren we, waar komen de gegevens vandaan, wat is een stip, privacy, contact
+- `404.html`, `robots.txt`, `sitemap.xml` — voor zoekmachines en foute adressen (zie "Vindbaarheid")
+- `data/wolven-data.js`, `data/zwijnen-data.js`, `data/overig-data.js` — de meldingendata (zie hieronder)
 - `assets/map-tools.js` + `assets/map-tools.css` — filterbalk onder de zoekbalk van elke kaart (type, periode,
   tijdschuif met afspelen, hitte-laag) en de hitte-laag zelf (canvas, geen extra bibliotheek)
 - `tools/seatable_sync.py` (+ `seatable.config.json`) — haalt de meldingen uit SeaTable en schrijft `data/*.js` (zie onder)
@@ -86,6 +89,10 @@ kolom `Type` mag dat overschrijven. `Tijd`, `Regio` en `Plaats` mogen erbij als 
     (uit te zetten met `"required": false` onder `"verification"` in de config).
   - Wordt door het weghalen van veel vinkjes de site plotseling veel kleiner (minder dan de helft), dan weigert de
     beveiliging de sync; controleer dan of dat de bedoeling is en draai lokaal `--force`.
+- **Diersoort:** `Dier` = Wolf of Zwijn gaat naar de wolven- of zwijnenpagina. **Elk ander dier** (Hert, Ree, Vos, ...) gaat naar de
+  pagina Overig (`"catch_all": "andere"` in de config) en onthoudt zijn naam (`diersoort`), zodat de kaart en de popup laten
+  zien om welk dier het gaat. Een nieuwe diernaam in de keuzelijst van SeaTable werkt dus meteen; een eigen pagina voor een dier
+  (bv. herten) is een blok in `SPECIES` in `assets/site.js` plus een pagina.
 - **Plaatsnaam:** SeaTable bewaart alleen coördinaten. Het script zoekt de woonplaats op bij PDOK (gratis, officieel) en
   onthoudt het antwoord in `tools/place-cache.json`, dus elk punt wordt maar één keer opgevraagd. Punten die meer dan
   5 km van een Nederlandse woonplaats liggen (bv. Duitsland) heten "Onbekende locatie". Valt PDOK even uit, dan blijven
@@ -106,7 +113,7 @@ kolom `Type` mag dat overschrijven. `Tijd`, `Regio` en `Plaats` mogen erbij als 
 - Twee dezelfde plaatsnamen op verschillende plekken zijn twee stippen; de website houdt ze uit elkaar met een intern
   `id`.
 
-Testen zonder SeaTable of internet: `python3 tools/test_seatable_sync.py` (nep-SeaTable en nep-PDOK; 12 tests,
+Testen zonder SeaTable of internet: `python3 tools/test_seatable_sync.py` (en `python3 tools/test_site_seo.py` voor de pagina's) (nep-SeaTable en nep-PDOK; 12 tests,
 waaronder een rondje oude data → SeaTable → site, met de bevroren oude data in `tools/fixtures/`). Tabellen en kolommen bekijken: `--inspect` (met `--sample`
 twee voorbeeldrijen). De oude data als CSV exporteren voor een import in SeaTable kan met `--export-legacy`.
 
@@ -117,6 +124,18 @@ op één plek: `FORMS` bovenin `assets/site.js`. De knoppen staan op de homepage
 wolvenpagina (onder de kaart, beide knoppen) en op de zwijnenpagina (onder de kaart, alleen de zichtmelding); ook de
 oproep in de "nog te weinig meldingen"-kaart linkt naar het formulier. Verandert een formulieradres, pas dan alleen
 `FORMS` aan. Nieuwe inzendingen wachten op jouw vinkje in de kolom `Verificatie` (zie hierboven).
+
+## Vindbaarheid (SEO)
+
+- Elke pagina heeft een eigen titel, beschrijving, canonical-adres, Open Graph/Twitter-gegevens en structured data (JSON-LD),
+  en een korte, voor zoekmachines leesbare introtekst. Alle pagina's linken in de footer naar elkaar.
+- `robots.txt` laat alles toe en wijst naar `sitemap.xml`. Voeg een nieuwe pagina ook toe aan `sitemap.xml` en aan de
+  publicatiestap in `.github/workflows/site.yml`; `python3 tools/test_site_seo.py` controleert dat (en titels, beschrijvingen,
+  canonicals, interne links en ankers).
+- **Eenmalig na de eerste publicatie:** meld `https://wildkaart.rlode.nl/sitemap.xml` aan in Google Search Console (en Bing
+  Webmaster Tools), en controleer daar of de pagina's worden geïndexeerd.
+- Beperking: de meldingen, cijfers en kaart worden met JavaScript getekend. Google voert dat uit, maar de introteksten en de
+  Over-pagina zijn gewoon HTML en dus altijd leesbaar.
 
 ## Filteren, afspelen, hitte-laag en delen
 

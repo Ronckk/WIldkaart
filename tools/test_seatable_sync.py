@@ -212,7 +212,9 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(sync.norm_type('', 'aanval'), 'aanval')
         self.assertEqual(sync.norm_species('Wolven', 'wolf', {'wolf', 'zwijn'}), 'wolf')
         self.assertEqual(sync.norm_species('Wild zwijn', 'wolf', {'wolf', 'zwijn'}), 'zwijn')
-        self.assertIsNone(sync.norm_species('Hert', 'wolf', {'wolf', 'zwijn'}))
+        self.assertIsNone(sync.norm_species('Hert', 'wolf', {'wolf', 'zwijn'}))                  # zonder vangnet: onbekend
+        self.assertEqual(sync.norm_species('Hert', 'wolf', {'wolf', 'zwijn', 'andere'}, 'andere'), 'andere')
+        self.assertEqual(sync.norm_species('Wolf', 'wolf', {'wolf', 'zwijn', 'andere'}, 'andere'), 'wolf')
 
     # ------------------------------------------------------------ jouw echte tabelindeling (Dier / Datum / Locatie ...)
     def real_layout(self):
@@ -310,7 +312,7 @@ class SyncTest(unittest.TestCase):
         (self.tmp / 'data' / 'wolven-data.js').write_text((self.tmp / 'data' / 'wolven-data.js').read_text() + '\n// x', encoding='utf-8')
         self.assertIn('wolven.html', sync.stamp_html(self.tmp, cfg))    # andere inhoud = ander nummer
         self.assertNotEqual(before, self.script_tags('wolven.html'))
-        self.assertEqual(len(self.script_tags('index.html')), 2)        # geen dubbele ?v= (?v=..?v=..)
+        self.assertEqual(len(self.script_tags('index.html')), len(cfg['output']))   # één per databestand, geen dubbele ?v= (?v=..?v=..)
         self.assertTrue(all(t.count('?v=') == 1 for t in self.script_tags('index.html')))
 
     def test_dry_run_and_export_leave_html_alone(self):
@@ -434,6 +436,30 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(evs['2026-09-09']['dieren'], [{'gedood': 4}])
         self.assertNotIn('dieren', evs['2026-09-08'])
         self.assertTrue(all(e['ty'] == 'aanval' for e in evs.values()))
+
+
+    # ------------------------------------------------------------ overige dieren (Hert, Ree, Vos, ...) -> pagina Overig
+    def test_other_animals_go_to_the_overig_file_with_their_name(self):
+        loc = lambda lat, lng: {'lat': lat, 'lng': lng}
+        Mock.tables = {
+            'Zichtmeldingen': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), ('Verificatie', 'checkbox')],
+                               'rows': [
+                                   {'Dier': 'Wolf', 'Datum': '2026-09-01', 'Locatie': loc(52.3, 5.7), 'Verificatie': True},
+                                   {'Dier': 'Ree', 'Datum': '2026-09-02T20:36:00+02:00', 'Locatie': loc(52.1, 5.5), 'Verificatie': True},
+                                   {'Dier': 'Vos', 'Datum': '2026-09-03', 'Locatie': loc(52.1, 5.5), 'Verificatie': True},
+                                   {'Dier': 'Hert', 'Datum': '2026-09-04', 'Locatie': loc(52.9, 6.4), 'Verificatie': False},   # nog niet geverifieerd
+                               ]},
+            'Aanval': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), ('Verificatie', 'checkbox')], 'rows': []},
+        }
+        sync.pdok_reverse = lambda lat, lon, d: {'name': 'Teststad', 'lat': lat, 'lon': lon}
+        self.assertEqual(self.run_sync('--force'), 0)
+        _, wolf = self.places('wolven-data.js')
+        self.assertEqual(sum(len(b['ev']) for b in wolf), 1)                # de wolf blijft bij de wolf
+        data, other = self.places('overig-data.js')
+        evs = sorted((e['d'], e['diersoort'], e['ty']) for b in other for e in b['ev'])
+        self.assertEqual(evs, [('2026-09-02', 'Ree', 'zichtmelding'), ('2026-09-03', 'Vos', 'zichtmelding')])   # Hert wacht op verificatie
+        self.assertEqual(data['updatedAt'][:4], '2026')
+        self.assertNotIn('diersoort', [k for b in wolf for e in b['ev'] for k in e])     # alleen op de Overig-pagina
 
 
 if __name__ == '__main__':

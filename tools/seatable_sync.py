@@ -158,7 +158,8 @@ def norm_type(v, default):
     return 'overig'
 
 
-def norm_species(v, default, allowed):
+def norm_species(v, default, allowed, catch_all=None):
+    """Wolf en zwijn hebben een eigen pagina; elk ander dier (hert, ree, vos, ...) gaat naar `catch_all` (de pagina Overig)."""
     t = norm(as_text(v))
     if not t:
         return default
@@ -167,7 +168,7 @@ def norm_species(v, default, allowed):
     elif 'zwijn' in t:
         key = 'zwijn'
     else:
-        return None
+        key = catch_all
     return key if key in allowed else None
 
 
@@ -291,13 +292,17 @@ def read_table(sea_rows, tmeta, table_cfg, cfg, warn):
         if not d or not (place or (lat is not None and lon is not None)):
             skipped += 1
             continue
-        species = norm_species(row.get(m['soort']) if m['soort'] else None, cfg['default_species'], allowed)
+        species = norm_species(row.get(m['soort']) if m['soort'] else None, cfg['default_species'], allowed, cfg.get('catch_all'))
         if species is None:
             warn('Tabel "%s": onbekende diersoort "%s" bij %s - rij overgeslagen.' % (name, as_text(row.get(m['soort'])), d))
             continue
         rec = {'species': species, 'place': place, 'd': d, 'tm': tm,
                'ty': norm_type(row.get(m['type']) if m['type'] else None, default_type),
                'lat': lat, 'lon': lon, 'regio': norm(as_text(row.get(m['regio']))) if m['regio'] else ''}
+        if species == cfg.get('catch_all'):
+            # de pagina Overig toont meerdere diersoorten door elkaar, dus per melding onthouden we welk dier het was
+            name = as_text(row.get(m['soort']))
+            rec['diersoort'] = name[:1].upper() + name[1:]
         dieren = []
         for dcol, gcol in slots:
             dier = as_text(row.get(dcol)) if dcol else ''
@@ -449,6 +454,8 @@ def build_species(recs, cfg, known, warn):
         e = {'d': r['d'], 'ty': r['ty']}
         if r['tm']:
             e['tm'] = r['tm']
+        if 'diersoort' in r:
+            e['diersoort'] = r['diersoort']
         if 'dieren' in r:
             e['dieren'] = r['dieren']
         g['ev'].append(e)
