@@ -7,13 +7,16 @@ Statisch, klaar om te hosten:
 - `zwijnen.html` — zwijnenmeldingen op de Veluwe
 - `overig.html` — meldingen van alle andere dieren (ree, hert, vos, ...), heel Nederland
 - `over.html` — uitleg: wat is een melding, hoe controleren we, waar komen de gegevens vandaan, wat is een stip, privacy, contact
-- `404.html`, `robots.txt`, `sitemap.xml` — voor zoekmachines en foute adressen (zie "Vindbaarheid")
+- `404.html`, `robots.txt`, `sitemap.xml` — voor zoekmachines en foute adressen (zie "Vindbaarheid"; `sitemap.xml` wordt bij
+  elke publicatie opnieuw gemaakt door `tools/build_sitemap.py`)
 - `data/wolven-data.js`, `data/zwijnen-data.js`, `data/overig-data.js` — de meldingendata (zie hieronder)
 - `assets/map-tools.js` + `assets/map-tools.css` — filterbalk onder de zoekbalk van elke kaart (type, periode,
   tijdschuif met afspelen, hitte-laag) en de hitte-laag zelf (canvas, geen extra bibliotheek)
 - `tools/seatable_sync.py` (+ `seatable.config.json`) — haalt de meldingen uit SeaTable en schrijft `data/*.js` (zie onder)
 - `assets/site.js` — de gedeelde data-laag: berekent alles uit de meldingen (tellingen, statistieken,
   "laatste 2 weken", weekverwachting, hotspots, weetjes, grafiek per maand) voor elke diersoort
+- Opmaak en scripts per pagina (zie "Opmaak en scripts" hieronder), `assets/fonts/` (lettertypen) en `assets/vendor/leaflet/`
+  (de kaartbibliotheek): alles wat de pagina's nodig hebben staat op de site zelf
 
 ## Data: één bron, meerdere kaarten
 
@@ -117,7 +120,7 @@ kolom `Type` mag dat overschrijven. `Tijd`, `Regio` en `Plaats` mogen erbij als 
 - Twee dezelfde plaatsnamen op verschillende plekken zijn twee stippen; de website houdt ze uit elkaar met een intern
   `id`.
 
-Testen zonder SeaTable of internet: `python3 tools/test_seatable_sync.py` (en `python3 tools/test_site_seo.py` voor de pagina's) (nep-SeaTable en nep-PDOK; 12 tests,
+Testen zonder SeaTable of internet: `python3 tools/test_seatable_sync.py` (en `python3 tools/test_site_seo.py` voor de pagina's) (nep-SeaTable en nep-PDOK; 29 tests voor de koppeling, 15 voor de pagina's,
 waaronder een rondje oude data → SeaTable → site, met de bevroren oude data in `tools/fixtures/`). Tabellen en kolommen bekijken: `--inspect` (met `--sample`
 twee voorbeeldrijen). De oude data als CSV exporteren voor een import in SeaTable kan met `--export-legacy`.
 
@@ -143,7 +146,13 @@ plaatsnamen) staan per pagina in `PAGES` in het script.
 
 - Elke pagina heeft een eigen titel, beschrijving, canonical-adres, Open Graph/Twitter-gegevens en structured data (JSON-LD),
   en een korte, voor zoekmachines leesbare introtekst. Alle pagina's linken in de footer naar elkaar.
-- `robots.txt` laat alles toe en wijst naar `sitemap.xml`. Voeg een nieuwe pagina ook toe aan `sitemap.xml` en aan de
+- `robots.txt` laat alles toe en wijst naar `sitemap.xml`. Die sitemap wordt niet met de hand bijgehouden: `tools/build_sitemap.py`
+  maakt hem bij elke publicatie en zet bij elke pagina een `<lastmod>` (de datum van de laatste wijziging aan de pagina of aan
+  haar meldingendata, uit de git-geschiedenis; de sync commit `data/` alleen bij nieuwe meldingen, dus de datum verandert precies
+  dan). Daarom haalt de publicatiestap de volledige git-geschiedenis op (`fetch-depth: 0`); bij een ondiepe checkout blijft
+  `<lastmod>` weg in plaats van een verkeerde datum te tonen. Het `sitemap.xml` in de repo is de kopie van een lokale run
+  (`python3 tools/build_sitemap.py`) en wordt bij het publiceren vervangen.
+- Een nieuwe pagina voeg je toe aan `PAGES` in `tools/build_sitemap.py`, aan `INDEXABLE` in `tools/test_site_seo.py` en aan de
   publicatiestap in `.github/workflows/site.yml`; `python3 tools/test_site_seo.py` controleert dat (en titels, beschrijvingen,
   canonicals, interne links en ankers).
 - **Eenmalig na de eerste publicatie:** meld `https://wildkaart.rlode.nl/sitemap.xml` aan in Google Search Console (en Bing
@@ -166,12 +175,43 @@ worden genegeerd. `?plaats=Epe` werkt er nog steeds naast. De filterlogica staat
 (`parseFilter`, `applyFilter`, `monthList`); de knoppen en de hitte-laag in `assets/map-tools.js`. Het filter
 geldt voor de kaart (en de kaartstatistieken); tabel, grafiek en verwachting blijven altijd op alle data gebaseerd.
 
+## Opmaak en scripts
+
+De pagina's zelf zijn klein: alle opmaak en (bijna) alle code staat in `assets/`, zodat de browser ze één keer ophaalt en
+onthoudt. In elke pagina blijven alleen het regeltje dat het gekozen thema meteen zet (anders flitst de pagina wit), de structured
+data (JSON-LD) en de paar regels die de pagina aan een diersoort koppelen (`WDK.renderReportCta(...)`) inline staan.
+
+| Bestand | Voor |
+| --- | --- |
+| `assets/species.css` | wolven-, zwijnen- en overig-pagina |
+| `assets/home.css` | homepage |
+| `assets/text.css` | `over.html` en `404.html` |
+| `assets/shell.css`, `assets/map-tools.css` | menubalk en voettekst; filterbalk en hitte-laag (op alle pagina's) |
+| `assets/wolven-page.js`, `zwijnen-page.js`, `overig-page.js` | de kaart, statistieken en verwachting van die pagina |
+| `assets/home-map.js`, `assets/home-stats.js` | homepage: de landelijke kaart, dan tabel, grafiek en filters |
+| `assets/theme.js`, `assets/back-to-top.js` | licht/donker-knop (alle pagina's); knop "Naar boven" (wolvenpagina) |
+| `assets/fonts/` | lettertypen Fraunces, IBM Plex Sans en Plex Mono (alleen de subsets `latin` en `latin-ext`), zelf gehost |
+
+Een wijziging in een pagina-eigen script of stijlblad werkt voor iedereen pas als hun browser het bestand opnieuw ophaalt
+(GitHub Pages laat de browser bestanden ~10 minuten bewaren). De data-scripts krijgen daarom een versienummer (zie boven),
+de bestanden in `assets/` niet. Een paginascript rekent op wat eerder wordt geladen: eerst de data, dan `site.js`, Leaflet en
+`map-tools.js`, en pas daarna het paginascript; houd die volgorde aan als je een script toevoegt.
+
+**Lettertypen** komen niet meer van Google Fonts. `assets/fonts/fonts.css` verwijst naar `.woff2`-bestanden in dezelfde map
+(Google Fonts, SIL Open Font License). Nog een gewicht of stijl nodig? Haal het bestand op bij Google Fonts, zet het in
+die map en voeg een `@font-face` toe aan `fonts.css`. `test_site_seo.py` faalt als een pagina weer naar Google Fonts of unpkg linkt.
+
 ## De kaart
 
 De kaarten gebruiken **Leaflet** voor de interactie (zoom, pan, zoeken, popups) met **CARTO's
 basemap-tegels** (Voyager voor licht, Dark Matter voor donker — schakelt automatisch mee met de
 licht/donker-knop). CARTO vereist tegenwoordig een gratis API-key in de tegel-URL (`?key=...`); die
-staat al in de drie HTML-bestanden.
+staat in de vier kaartscripts (`assets/home-map.js`, `wolven-page.js`, `zwijnen-page.js`, `overig-page.js`). Verandert de key,
+pas hem dan in alle vier aan. De tegels zijn de enige externe dienst die de pagina's nog aanroepen.
+
+Leaflet zelf (versie 1.9.4, BSD-2) staat in `assets/vendor/leaflet/` en wordt dus niet meer van unpkg.com geladen; dat is
+sneller, werkt ook als unpkg even uitvalt en stuurt geen bezoekersgegevens naar een derde. Upgraden: nieuwe `leaflet.js`,
+`leaflet.css` en de map `images/` van dezelfde versie uit het npm-pakket `leaflet` (`dist/`) in die map zetten.
 
 **Waarom niet de "kale" OpenStreetMap-tegels (tile.openstreetmap.org)?** Dat was de eerste versie, maar
 die tegelserver wordt onderhouden door vrijwilligers en blokkeert actief clients die niet aan hun
@@ -187,8 +227,9 @@ De site staat in een GitHub-repo en wordt met GitHub Pages gepubliceerd op **wil
 - **Elke 3 uur** (en met de knop *Actions > Site > Run workflow*): `tools/seatable_sync.py` draaien. Zijn er nieuwe
   meldingen, dan worden `data/`, het versienummer in de HTML en `tools/place-cache.json` gecommit en wordt de site
   opnieuw gepubliceerd. Zijn er geen nieuwe meldingen, dan gebeurt er niets (geen commit, geen publicatie).
-- **Bij elke push naar `main`**: de site opnieuw publiceren. Gepubliceerd worden alleen `index.html`, `wolven.html`,
-  `zwijnen.html`, `assets/` en `data/` (dus niet `tools/`, de tests of deze README).
+- **Bij elke push naar `main`**: de site opnieuw publiceren. Gepubliceerd worden de pagina's (`index.html`, `wolven.html`,
+  `zwijnen.html`, `overig.html`, `over.html`, `404.html`), `robots.txt`, een vers gemaakte `sitemap.xml`, `assets/` en `data/`
+  (dus niet `tools/`, de tests of deze README).
 
 `tests.yml` draait bij elke push de tests van de koppeling. Faalt de sync (bv. token ongeldig, of SeaTable levert veel
 minder meldingen dan de site heeft), dan wordt de run rood en krijg je van GitHub een mail; de site blijft dan gewoon

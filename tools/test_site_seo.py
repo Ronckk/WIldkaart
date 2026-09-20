@@ -5,8 +5,10 @@ is geldig JSON, sitemap en robots.txt zijn compleet, interne links en ankers bes
 
 Draai:  python3 tools/test_site_seo.py
 """
+import datetime
 import json
 import re
+import sys
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -62,6 +64,28 @@ class SeoTest(unittest.TestCase):
         urls = {u.text for u in ET.parse(ROOT / 'sitemap.xml').getroot().findall('s:url/s:loc', ns)}
         self.assertEqual(urls, {BASE + p for p in INDEXABLE.values()})
 
+    def test_sitemap_lastmod_is_a_valid_date_when_present(self):
+        ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+        for u in ET.parse(ROOT / 'sitemap.xml').getroot().findall('s:url', ns):
+            day = u.findtext('s:lastmod', default=None, namespaces=ns)
+            if day is not None:
+                with self.subTest(url=u.findtext('s:loc', namespaces=ns)):
+                    self.assertRegex(day, r'^\d{4}-\d{2}-\d{2}$')
+                    datetime.date.fromisoformat(day)
+
+    def test_build_sitemap_covers_exactly_the_indexable_pages(self):
+        sys.path.insert(0, str(ROOT / 'tools'))
+        try:
+            import build_sitemap
+        finally:
+            sys.path.pop(0)
+        self.assertEqual({(path, page) for path, page, _ in build_sitemap.PAGES}, {(path, page) for page, path in INDEXABLE.items()})
+        for _, page, data in build_sitemap.PAGES:
+            for f in [page] + data:
+                self.assertTrue((ROOT / f).exists(), f)
+        urls = set(re.findall(r'<loc>([^<]+)</loc>', build_sitemap.build()))
+        self.assertEqual(urls, {BASE + p for p in INDEXABLE.values()})
+
     def test_robots_points_to_the_sitemap_and_blocks_nothing(self):
         r = read('robots.txt')
         self.assertIn('Sitemap: ' + BASE + 'sitemap.xml', r)
@@ -70,7 +94,8 @@ class SeoTest(unittest.TestCase):
     def test_internal_links_and_anchors_exist(self):
         pages = {'', 'wolven', 'zwijnen', 'overig', 'over'}
         over_ids = set(re.findall(r'id="([^"]+)"', read('over.html')))
-        for name in list(INDEXABLE) + ['404.html', 'assets/site.js']:
+        scripts = sorted(str(f.relative_to(ROOT)) for f in (ROOT / 'assets').glob('*.js'))
+        for name in list(INDEXABLE) + ['404.html'] + scripts:
             text = read(name)
             for href in re.findall(r'href="((?:\./|wolven|zwijnen|overig|over)[^"]*)"', text.replace('\\"', '"')):
                 path, _, frag = href.partition('#')
@@ -83,6 +108,8 @@ class SeoTest(unittest.TestCase):
         wf = read('.github/workflows/site.yml')
         for f in list(INDEXABLE) + ['404.html', 'robots.txt', 'sitemap.xml']:
             self.assertIn(f, wf, f + ' ontbreekt in de publicatie-stap van site.yml')
+        self.assertIn('tools/build_sitemap.py', wf, 'de publicatie moet sitemap.xml met <lastmod> maken')
+        self.assertIn('fetch-depth: 0', wf, '<lastmod> komt uit de git-geschiedenis, dus de publicatie heeft de volledige geschiedenis nodig')
         for f in list(INDEXABLE) + ['404.html', 'robots.txt', 'sitemap.xml', 'assets/og-image.png']:
             self.assertTrue((ROOT / f).exists(), f)
 
@@ -107,6 +134,46 @@ class SeoTest(unittest.TestCase):
         for key in ('zichtmelding', 'aanval'):
             url = re.search(r"%s:\s*\{[^}]*url:'([^']+)'" % key, js).group(1)
             self.assertIn('href="%s"' % url, footer)
+
+
+    def test_pages_load_fonts_and_leaflet_from_the_site_itself(self):
+        """Privacy en snelheid: geen verbinding met Google Fonts of unpkg; alleen de kaarttegels komen van een externe dienst."""
+        for page in list(INDEXABLE) + ['404.html']:
+            s = read(page)
+            with self.subTest(page=page):
+                for host in ('fonts.googleapis.com', 'fonts.gstatic.com', 'unpkg.com'):
+                    self.assertNotIn(host, s)
+                self.assertIn('href="assets/fonts/fonts.css"', s)
+        fonts = read('assets/fonts/fonts.css')
+        for f in re.findall(r'url\(([^)]+\.woff2)\)', fonts):
+            self.assertTrue((ROOT / 'assets' / 'fonts' / f).exists(), f)
+        self.assertNotIn('http', re.sub(r'/\*.*?\*/', '', fonts, flags=re.S))
+        for page in ('index.html', 'wolven.html', 'zwijnen.html', 'overig.html'):
+            s = read(page)
+            self.assertIn('src="assets/vendor/leaflet/leaflet.js"', s, page)
+            self.assertIn('href="assets/vendor/leaflet/leaflet.css"', s, page)
+        for f in ('leaflet.js', 'leaflet.css', 'LICENSE', 'images/layers.png', 'images/marker-icon.png'):
+            self.assertTrue((ROOT / 'assets' / 'vendor' / 'leaflet' / f).exists(), f)
+
+    def test_every_local_asset_a_page_references_exists(self):
+        for page in list(INDEXABLE) + ['404.html']:
+            s = read(page)
+            for ref in re.findall(r'(?:src|href)="(assets/[^"?#]+)', s):
+                with self.subTest(page=page, ref=ref):
+                    self.assertTrue((ROOT / ref).exists(), ref)
+        for css in (ROOT / 'assets').glob('*.css'):
+            for ref in re.findall(r'url\(["\']?(?!data:|https?:|#)([^)"\']+)', css.read_text(encoding='utf-8')):
+                with self.subTest(css=css.name, ref=ref):
+                    self.assertTrue((css.parent / ref).exists(), ref)
+
+    def test_pages_keep_css_and_scripts_in_assets(self):
+        """De opmaak en de scripts staan in assets/ (gedeeld en gecachet); in de pagina blijft alleen kleine inline-code."""
+        for page in list(INDEXABLE) + ['404.html']:
+            s = read(page)
+            with self.subTest(page=page):
+                self.assertNotIn('<style', s, 'zet CSS in een bestand in assets/')
+                for body in re.findall(r'<script>(.*?)</script>', s, re.S):
+                    self.assertLess(len(body), 600, 'inline script te groot; zet het in assets/')
 
 
 if __name__ == '__main__':
