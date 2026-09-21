@@ -168,7 +168,7 @@
     for (var i = 0; i < sp.dominantOrder.length; i++){
       if (c[sp.dominantOrder[i]] > 0){ dom = sp.dominantOrder[i]; break; }
     }
-    return { id:placeId(base), n:base.n, lat:base.lat, lon:base.lon, c:c, t:ev.length, dom:dom, ev:ev };
+    return { id:placeId(base), n:base.n, g:base.g, lat:base.lat, lon:base.lon, c:c, t:ev.length, dom:dom, ev:ev };
   }
 
   function makePlace(raw, sp){
@@ -177,7 +177,7 @@
       // een melding zonder gedateerde gebeurtenis: dan houden we de getallen uit het databestand aan
       var c = { zichtmelding:0, aanval:0, jonkies:0, overig:0 };
       Object.keys(raw.c || {}).forEach(function(k){ c[bucketOf(k)] += raw.c[k] || 0; });
-      return { id:placeId(raw), n:raw.n, lat:raw.lat, lon:raw.lon, c:c, t:raw.t || 0, dom:raw.dom || 'overig', ev:[] };
+      return { id:placeId(raw), n:raw.n, g:raw.g, lat:raw.lat, lon:raw.lon, c:c, t:raw.t || 0, dom:raw.dom || 'overig', ev:[] };
     }
     return summarize(raw, ev, sp);
   }

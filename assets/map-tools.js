@@ -4,8 +4,9 @@
  *  - WDK.HeatLayer      dichtheids-/hitte-laag (canvas, zonder extra bibliotheek) die onder de bolletjes ligt
  *  - WDK.mountExplorer  filterbalk voor een kaart: type, periode, tijdschuif met afspelen, hitte-laag,
  *                       en de hele toestand als deelbare URL (?soort=wolf&type=aanval&van=2026-05&tot=2026-08&heat=1)
- *  - WDK.clusterLayer   bolletjes die dicht bij elkaar liggen (binnen 5 km) samenvoegen tot één cluster met het aantal
- *                       meldingen; bij inzoomen vallen ze weer uit elkaar (WDK.clusterPoints is de berekening zelf)
+ *  - WDK.clusterLayer   bolletjes die dicht bij elkaar liggen (binnen 5 km), of uitgezoomd in dezelfde gemeente liggen,
+ *                       samenvoegen tot één cluster met het aantal meldingen; bij inzoomen vallen ze weer uit elkaar
+ *                       (WDK.clusterPoints is de berekening zelf)
  *
  * De pagina houdt zelf de bolletjes bij: bij elke wijziging roept de balk `onChange(filter)` aan, de pagina
  * filtert met WDK.applyFilter, tekent opnieuw en geeft de punten voor de hitte-laag terug via setHeatPoints.
@@ -337,9 +338,10 @@
   // ---------------------------------------------------------------- clusteren
   // Meldingen die dicht bij elkaar liggen worden één bolletje met het totaal aantal meldingen. "Dicht bij elkaar" is
   // hoogstens CLUSTER.maxKm in werkelijkheid én hoogstens CLUSTER.maxPx op het scherm: zo staan bolletjes die elkaar
-  // overlappen niet meer in de weg, en vallen ze uit elkaar zodra je genoeg inzoomt. Vanaf CLUSTER.noClusterZoom staat elk
-  // bolletje los. De berekening (clusterPoints) heeft geen Leaflet nodig.
-  var CLUSTER = { maxKm:5, maxPx:60, noClusterZoom:16 };
+  // overlappen niet meer in de weg, en vallen ze uit elkaar zodra je genoeg inzoomt. Verder gaan bolletjes die in dezelfde
+  // gemeente liggen (item.g) samen zolang het zoomniveau lager is dan CLUSTER.gemeenteZoom, hoe ver ze ook uit elkaar staan.
+  // Vanaf CLUSTER.noClusterZoom staat elk bolletje los. De berekening (clusterPoints) heeft geen Leaflet nodig.
+  var CLUSTER = { maxKm:5, maxPx:60, noClusterZoom:16, gemeenteZoom:10 };
   var MIXED_COLOR = '#6b6b66'; // cluster met bolletjes van verschillende kleur (bv. meerdere diersoorten op de homepage)
   var DOM_RANK = { aanval:0, jonkies:1, zichtmelding:2, overig:3 }; // welke soort melding de kleur van een cluster bepaalt
 
@@ -349,28 +351,41 @@
   }
   function metersPerPx(lat, z){ return 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, z); }
 
-  // items: [{ id, lat, lon, w }]  ->  [{ items:[...], lat, lon, w }]  (lat/lon = middelpunt, gewogen op w = aantal meldingen)
-  // Grootste eerst als kern; alles binnen de straal van een kern hoort erbij. Zo is de uitkomst niet afhankelijk van de volgorde.
+  // items: [{ id, lat, lon, w, g? }]  ->  [{ items:[...], lat, lon, w, g }]
+  // (lat/lon = middelpunt, gewogen op w = aantal meldingen; g = de gemeente als alle items daar liggen)
+  // Onder CLUSTER.gemeenteZoom vormen de items van één gemeente eerst samen één blok; daarna gaan blokken die dicht bij elkaar
+  // liggen samen. Grootste eerst als kern; alles binnen de straal van een kern hoort erbij. Zo is de uitkomst niet afhankelijk
+  // van de volgorde.
   function clusterPoints(items, z, opts){
-    var o = { maxKm:CLUSTER.maxKm, maxPx:CLUSTER.maxPx, noClusterZoom:CLUSTER.noClusterZoom };
+    var o = { maxKm:CLUSTER.maxKm, maxPx:CLUSTER.maxPx, noClusterZoom:CLUSTER.noClusterZoom, gemeenteZoom:CLUSTER.gemeenteZoom };
     for (var k in (opts || {})) o[k] = opts[k];
     function make(list){
-      var w = 0, lat = 0, lon = 0;
-      list.forEach(function(it){ var x = it.w || 1; w += x; lat += it.lat * x; lon += it.lon * x; });
-      return { items:list, lat:lat / w, lon:lon / w, w:w };
+      var w = 0, lat = 0, lon = 0, g = list[0].g || null;
+      list.forEach(function(it){ var x = it.w || 1; w += x; lat += it.lat * x; lon += it.lon * x; if (it.g !== g) g = null; });
+      return { items:list, lat:lat / w, lon:lon / w, w:w, g:g };
     }
     if (z >= o.noClusterZoom) return items.map(function(it){ return make([it]); });
-    var pts = items.map(function(it){ var p = mercator(it.lat, it.lon, z); return { it:it, x:p.x, y:p.y, used:false }; });
-    pts.sort(function(a, b){ return (b.it.w || 1) - (a.it.w || 1) || (a.it.id < b.it.id ? -1 : a.it.id > b.it.id ? 1 : 0); });
+    var blocks = [], byGemeente = {};
+    items.forEach(function(it){
+      if (!it.g || z >= o.gemeenteZoom){ blocks.push([it]); return; }
+      if (!byGemeente[it.g]){ byGemeente[it.g] = []; blocks.push(byGemeente[it.g]); }
+      byGemeente[it.g].push(it);
+    });
+    var pts = blocks.map(function(list){
+      var m = make(list), p = mercator(m.lat, m.lon, z), id = list[0].id;
+      list.forEach(function(it){ if (it.id < id) id = it.id; });
+      return { list:list, w:m.w, lat:m.lat, id:id, x:p.x, y:p.y, used:false };
+    });
+    pts.sort(function(a, b){ return b.w - a.w || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); });
     var out = [];
     pts.forEach(function(seed){
       if (seed.used) return;
       seed.used = true;
-      var r = Math.min(o.maxPx, o.maxKm * 1000 / metersPerPx(seed.it.lat, z)), r2 = r * r, list = [seed.it];
+      var r = Math.min(o.maxPx, o.maxKm * 1000 / metersPerPx(seed.lat, z)), r2 = r * r, list = seed.list.slice();
       pts.forEach(function(q){
         if (q.used) return;
         var dx = q.x - seed.x, dy = q.y - seed.y;
-        if (dx * dx + dy * dy <= r2){ q.used = true; list.push(q.it); }
+        if (dx * dx + dy * dy <= r2){ q.used = true; list = list.concat(q.list); }
       });
       out.push(make(list));
     });
@@ -424,7 +439,7 @@
           return;
         }
         var d = Math.max(16, Math.min(34, 13 + 3.2 * Math.sqrt(c.w))), size = Math.round(d * 2);
-        var title = c.w + ' meldingen op ' + c.items.length + ' plekken. Klik om in te zoomen.';
+        var title = c.w + ' meldingen ' + (c.g ? 'in gemeente ' + c.g : 'op ' + c.items.length + ' plekken') + '. Klik om in te zoomen.';
         var icon = L.divIcon({ className:'wdk-cluster-icon', iconSize:[size, size],
           html:'<div class="wdk-cluster" style="--c:' + color + '"><span>' + c.w + '</span></div>' });
         var mk = L.marker([c.lat, c.lon], { icon:icon, title:title, alt:title, keyboard:true }).addTo(self._extra);

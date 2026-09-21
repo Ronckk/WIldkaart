@@ -106,6 +106,7 @@ class SyncTest(unittest.TestCase):
         os.environ['SEATABLE_API_TOKEN'] = TOKEN
         sync.PAGE = 100  # dwing paginering af
         sync.pdok_reverse = lambda lat, lon, d: (_ for _ in ()).throw(AssertionError('onverwachte PDOK-aanroep'))
+        sync.pdok_gemeente = lambda lat, lon: None   # gewone tests: geen gemeente (en nooit echt PDOK bellen)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -605,6 +606,34 @@ class SyncTest(unittest.TestCase):
         self.assertIn((52.3015, 5.7168), self.geocoded)                              # het oude "niet gevonden" is opnieuw opgevraagd
         self.assertNotIn((52.31, 5.73), self.geocoded)                              # het goede antwoord bleef uit de cache komen
         self.assertTrue(all(v.get('name') for v in json.loads(cache.read_text()).values()))
+
+    # ------------------------------------------------------------ gemeente per plek (voor het samenvoegen op de kaart)
+    def test_places_get_their_gemeente(self):
+        self.real_layout()
+        asked = []
+        sync.pdok_gemeente = lambda lat, lon: asked.append((round(lat, 4), round(lon, 4))) or ('Ermelo' if lat < 52.315 else 'Nunspeet')
+        self.assertEqual(self.run_sync('--force'), 0)
+        _, wolf = self.places('wolven-data.js')
+        ermelo = [b for b in wolf if b['n'] == 'Ermelo']
+        self.assertTrue(ermelo and all(b['g'] == 'Ermelo' for b in ermelo))
+        self.assertEqual(list(ermelo[0]), ['n', 'lat', 'lon', 'g', 'ev'])           # vaste volgorde, dus geen onnodige wijzigingen in git
+        cache = json.loads((self.tmp / 'tools' / 'gemeente-cache.json').read_text())
+        self.assertIn('Ermelo', cache.values())
+        n = len(asked)
+        self.run_sync('--force')
+        self.assertEqual(len(asked), n)                                              # tweede run: alles uit tools/gemeente-cache.json
+
+    def test_gemeente_outage_keeps_the_reports_and_is_not_remembered(self):
+        self.real_layout()
+
+        def down(lat, lon):
+            raise sync.SyncError('Geen verbinding met PDOK: nep')
+        sync.pdok_gemeente = down
+        self.assertEqual(self.run_sync('--force'), 0)
+        _, wolf = self.places('wolven-data.js')
+        self.assertEqual(sum(len(b['ev']) for b in wolf), 4)
+        self.assertTrue(all('g' not in b for b in wolf))
+        self.assertFalse((self.tmp / 'tools' / 'gemeente-cache.json').exists())
 
 
 if __name__ == '__main__':
