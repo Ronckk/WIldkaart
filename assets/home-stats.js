@@ -13,11 +13,6 @@
   });
   if (!SPECIES.length) return;
 
-  function radius(count, maxC){
-    var R0 = 5, R1 = 16;
-    return R0 + (R1-R0) * Math.sqrt(count/maxC);
-  }
-
   function popupHtml(species, b){
     var html = '<div class="tt-name">'+species.emoji+' '+nameHtml(b.n)+'</div>';
     Object.keys(b.c).forEach(function(k){
@@ -71,22 +66,15 @@
       if (species.legendItem) species.legendItem.style.opacity = on ? '' : '.45'; // uitgezette soort dimmen in de legenda
       if (!on) return;
       var rows = WDK.applyFilter(species.rows, species.key, f);
-      var maxCount = 1;
-      rows.forEach(function(b){ if (b.t > maxCount) maxCount = b.t; });
-      rows.forEach(function(b){
-        var m = L.circleMarker([b.lat, b.lon], {
-          radius: radius(b.t, maxCount),
-          color: 'var(--map-surface)',
-          weight: 1.2,
-          fillColor: species.color,
-          fillOpacity: 0.85
-        });
-        m.bindPopup(popupHtml(species, b), { maxWidth:240 });
-        var id = species.key + '::' + b.id;
-        items.push({ id:id, lat:b.lat, lon:b.lon, w:b.t, rank:WDK.DOM_RANK[b.dom], color:species.color, marker:m });
-        total += b.t; places++;
-        if (b.ev.length && (!latest || b.ev[0].d > latest.b.ev[0].d)) latest = { b:b, id:id };
+      var pm = WDK.placeMarkers(rows, {
+        color:function(){ return species.color; },
+        popup:function(b){ return popupHtml(species, b); },
+        radius:[5, 16], weight:1.2,
+        id:function(b){ return species.key + '::' + b.id; }
       });
+      items = items.concat(pm.items);
+      rows.forEach(function(b){ total += b.t; places++; });
+      if (pm.latest && (!latest || pm.latest.ev[0].d > latest.b.ev[0].d)) latest = { b:pm.latest, id:pm.latestId };
     });
     CL.setItems(items, { halo: latest && latest.id });
     EX.setSummary(total, places);

@@ -15,6 +15,7 @@ Gebruik (alleen standaardbibliotheek, Python 3.9+):
   python3 tools/seatable_sync.py                       # schrijf data/*.js  (de vorige versie blijft als *.bak staan)
   python3 tools/seatable_sync.py --export-legacy       # huidige data als CSV, om eenmalig in SeaTable te importeren
   python3 tools/seatable_sync.py --stamp               # alleen de versienummers in de HTML-pagina's bijwerken (geen token nodig)
+  python3 tools/seatable_sync.py --stamp --assets --root _site   # ook achter scripts en stijlbladen (doet de publicatie)
 
 De token hoort alleen leesrechten te hebben (API-token met "read-only").
 """
@@ -545,21 +546,38 @@ def data_version(path):
     return hashlib.sha1(path.read_bytes()).hexdigest()[:10]
 
 
-def stamp_html(root, cfg, dry=False):
+ASSET_REF = re.compile(r'((?:src|href)="(assets/[^"?#]+\.(?:js|css)))(?:\?v=[^"]*)?(")')
+
+
+def stamp_html(root, cfg, dry=False, assets=False):
     """Zet ?v=<vingerafdruk> achter de data-scripts in de HTML-pagina's (<script src="data/x.js?v=abc123">).
     Zo vraagt een browser of host na elke sync het nieuwe databestand op in plaats van een oude kopie uit de cache.
+    Met assets=True krijgen ook de eigen scripts en stijlbladen (assets/*.js, assets/*.css) zo'n nummer; de publicatie doet dat
+    op de kopie in _site, zodat een bezoeker nooit een oud script bij een nieuwe pagina krijgt (of andersom).
     -> lijst namen van pagina's die (zouden) veranderen."""
     versions = {}
     for outcfg in cfg['output'].values():
         f = root / outcfg['file']
         if f.exists():
             versions[outcfg['file']] = data_version(f)
+    asset_versions = {}
+
+    def asset_ref(m):
+        path = m.group(2)
+        if path not in asset_versions:
+            f = root / path
+            asset_versions[path] = data_version(f) if f.is_file() else None
+        v = asset_versions[path]
+        return m.group(0) if v is None else '%s?v=%s%s' % (m.group(1), v, m.group(3))
+
     changed = []
     for page in sorted(root.glob('*.html')):
         text = page.read_text(encoding='utf-8')
         new = text
         for name, v in versions.items():
             new = re.sub(r'(src="%s)(?:\?v=[^"]*)?(")' % re.escape(name), r'\g<1>?v=%s\g<2>' % v, new)
+        if assets:
+            new = ASSET_REF.sub(asset_ref, new)
         if new != text:
             changed.append(page.name)
             if not dry:
@@ -701,6 +719,7 @@ def main(argv=None):
     ap.add_argument('--dry-run', action='store_true', help='alles doorrekenen maar niets schrijven')
     ap.add_argument('--force', action='store_true', help='schrijf ook als er veel minder meldingen zijn dan nu')
     ap.add_argument('--stamp', action='store_true', help='alleen de versienummers achter de data-scripts in de HTML-pagina\'s bijwerken')
+    ap.add_argument('--assets', action='store_true', help='bij --stamp: ook de versienummers achter assets/*.js en assets/*.css')
     ap.add_argument('--export-legacy', action='store_true', help='schrijf de huidige data als CSV voor import in SeaTable')
     ap.add_argument('--server', help='overschrijft "server" uit de config')
     args = ap.parse_args(argv)
@@ -710,7 +729,7 @@ def main(argv=None):
         if args.export_legacy:
             return cmd_export_legacy(cfg, root, root / 'tools' / 'export')
         if args.stamp:
-            changed = stamp_html(root, cfg)
+            changed = stamp_html(root, cfg, assets=args.assets)
             print('Versienummer bijgewerkt in: %s' % ', '.join(changed) if changed else 'Alle versienummers waren al actueel.')
             return 0
         load_env(ROOT / 'tools' / '.env')

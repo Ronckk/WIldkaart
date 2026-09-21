@@ -74,6 +74,12 @@ uit de cache. **Upload daarom na een sync de HTML-pagina's én de `data/`-map.**
 zetten (bv. na een handmatige wijziging van een databestand) kan met `python3 tools/seatable_sync.py --stamp`
 (geen token nodig).
 
+Dezelfde versienummers komen bij het publiceren ook achter alle eigen scripts en stijlbladen (`assets/*.js`, `assets/*.css`).
+De publicatiestap in `.github/workflows/site.yml` doet dat op de kopie in `_site` (`seatable_sync.py --stamp --assets --root _site`),
+dus in de repo blijven de pagina's ongewijzigd en je kunt het niet vergeten. GitHub Pages bewaart bestanden ongeveer 10 minuten;
+zonder versienummer kan een bezoeker in die tijd een oud script bij een nieuwe pagina krijgen. Nieuwe scripts hoef je nergens aan te
+melden: elke `<script src="assets/...">` of `<link href="assets/....css">` in een pagina krijgt vanzelf een nummer.
+
 Bij het eerste echte schrijven vervangt SeaTable de oude handmatige data. Omdat SeaTable dan veel minder meldingen
 heeft dan de site nu, weigert het script dat zonder `--force` (beveiliging tegen een lege of verkeerde tabel). De
 allereerste oude versie blijft bewaard in `tools/backup/`, de vorige versie steeds als `data/*.js.bak`.
@@ -173,6 +179,18 @@ binnen 5 km), verhoog dan `maxKm`. De kleur van een cluster is die van de belang
 op de homepage is een cluster met meerdere diersoorten grijs. Het zoeken van een plaats zoomt zo ver in dat het bolletje los staat en opent
 dan zijn popup. De rekenregel zelf is `WDK.clusterPoints(items, zoom)` en heeft geen kaart nodig.
 
+## Gedeelde kaartcode
+
+Wat elke kaartpagina nodig heeft staat één keer in `assets/map-base.js` (geladen na Leaflet en `site.js`):
+
+- `WDK.baseMap(id, { center, zoom, buttons? })`: de kaart met kaarttegels (licht/donker), formaat en zoomknoppen (`zoomIn`, `zoomOut`, `zoomReset`).
+- `WDK.mountSearch({ input, results, find, onSelect, debounce? })`: de zoekbalk met lijst; `find(q)` geeft de resultaten (of een belofte, zoals bij PDOK op de meldpagina).
+- `WDK.placeMarkers(rows, { color, popup, radius?, weight?, id? })`: de bolletjes van een lijst plaatsen, klaar voor `WDK.clusterLayer(...).setItems`.
+- `WDK.revealMap(el)`: scrolt de kaart in beeld. De actieve menuknop die naar boven scrolt staat in `assets/theme.js`.
+
+De pagina's (`wolven-page.js`, `zwijnen-page.js`, `overig-page.js`, `home-map.js`, `home-stats.js`, `melden.js`) houden alleen over wat bij hen hoort:
+cijfers, popups, kleuren en welke plaatsen er zijn. Een nieuwe kaartpagina laadt `map-base.js` (en `map-tools.js` voor filters en clusters).
+
 ## Menubalk en voettekst
 
 De menubalk en de voettekst (met een eigen achtergrondkleur over de volle breedte) staan als één sjabloon in
@@ -196,6 +214,8 @@ plaatsnamen) staan per pagina in `PAGES` in het script.
 - Een nieuwe pagina voeg je toe aan `PAGES` in `tools/build_sitemap.py`, aan `INDEXABLE` in `tools/test_site_seo.py` en aan de
   publicatiestap in `.github/workflows/site.yml`; `python3 tools/test_site_seo.py` controleert dat (en titels, beschrijvingen,
   canonicals, interne links en ankers).
+- `google3490471582df8f40.html` in de root is het verificatiebestand van Google Search Console (eigendom van `wildkaart.rlode.nl`).
+  Laat het staan en ongewijzigd; de publicatiestap kopieert het mee en een test bewaakt dat.
 - **Eenmalig na de eerste publicatie:** meld `https://wildkaart.rlode.nl/sitemap.xml` aan in Google Search Console (en Bing
   Webmaster Tools), en controleer daar of de pagina's worden geïndexeerd.
 - Beperking: de meldingen, cijfers en kaart worden met JavaScript getekend. Google voert dat uit, maar de introteksten en de

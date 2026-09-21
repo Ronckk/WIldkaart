@@ -110,6 +110,7 @@ class SeoTest(unittest.TestCase):
         for f in list(INDEXABLE) + ['404.html', 'robots.txt', 'sitemap.xml']:
             self.assertIn(f, wf, f + ' ontbreekt in de publicatie-stap van site.yml')
         self.assertIn('tools/build_sitemap.py', wf, 'de publicatie moet sitemap.xml met <lastmod> maken')
+        self.assertIn('--stamp --assets --root _site', wf, 'de publicatie moet ?v= achter scripts en stijlbladen zetten (cache)')
         self.assertIn('fetch-depth: 0', wf, '<lastmod> komt uit de git-geschiedenis, dus de publicatie heeft de volledige geschiedenis nodig')
         for f in list(INDEXABLE) + ['404.html', 'robots.txt', 'sitemap.xml', 'assets/og-image.png']:
             self.assertTrue((ROOT / f).exists(), f)
@@ -128,6 +129,12 @@ class SeoTest(unittest.TestCase):
         cols = json.loads(read('tools/seatable.config.json'))['columns']
         self.assertIn(lat.lower(), [c.lower() for c in cols['lat']])
         self.assertIn(lon.lower(), [c.lower() for c in cols['lon']])
+
+    def test_search_console_verification_file_is_published_unchanged(self):
+        """Google Search Console controleert of dit bestand op de site staat, met precies deze inhoud."""
+        name = 'google3490471582df8f40.html'
+        self.assertEqual(read(name).strip(), 'google-site-verification: ' + name)
+        self.assertIn(name, read('.github/workflows/site.yml'), 'de publicatie moet het verificatiebestand meenemen')
 
     def test_menu_and_footer_match_the_shared_template(self):
         import subprocess, sys
