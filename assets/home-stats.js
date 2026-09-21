@@ -93,7 +93,8 @@
   }
   renderMap();
 
-  // ---- "net binnen gekomen meldingen" tabel: top 10 meest recente meldingen over alle soorten ----
+  // ---- "net binnen gekomen meldingen" tabel: de RECENT_MAX meest recente meldingen over alle soorten (het venster scrolt) ----
+  var RECENT_MAX = 25;
   var events = [];
   SPECIES.forEach(function(species){
     WDK.events(species.rows, species).forEach(function(e){ events.push(e); });
@@ -113,10 +114,10 @@
     }
   }
 
-  var top10 = events.slice(0, 10);
+  var recent = events.slice(0, RECENT_MAX);
   var tbody = document.getElementById('recentReportsBody');
-  if (tbody && top10.length){
-    tbody.innerHTML = top10.map(function(e, i){
+  if (tbody && recent.length){
+    tbody.innerHTML = recent.map(function(e, i){
       var typeLabel = TYPE_LABEL[e.ty] || e.ty;
       var typeClass = e.ty === 'zichtmelding' ? ' class="rt-type-zicht"' : (e.ty === 'aanval' ? ' class="rt-type-aanval"' : '');
       return '<tr>' +
