@@ -4,6 +4,8 @@
  *  - WDK.HeatLayer      dichtheids-/hitte-laag (canvas, zonder extra bibliotheek) die onder de bolletjes ligt
  *  - WDK.mountExplorer  filterbalk voor een kaart: type, periode, tijdschuif met afspelen, hitte-laag,
  *                       en de hele toestand als deelbare URL (?soort=wolf&type=aanval&van=2026-05&tot=2026-08&heat=1)
+ *  - WDK.clusterLayer   bolletjes die dicht bij elkaar liggen (binnen 5 km) samenvoegen tot één cluster met het aantal
+ *                       meldingen; bij inzoomen vallen ze weer uit elkaar (WDK.clusterPoints is de berekening zelf)
  *
  * De pagina houdt zelf de bolletjes bij: bij elke wijziging roept de balk `onChange(filter)` aan, de pagina
  * filtert met WDK.applyFilter, tekent opnieuw en geeft de punten voor de hitte-laag terug via setHeatPoints.
@@ -331,6 +333,144 @@
       months: months
     };
   }
+
+  // ---------------------------------------------------------------- clusteren
+  // Meldingen die dicht bij elkaar liggen worden één bolletje met het totaal aantal meldingen. "Dicht bij elkaar" is
+  // hoogstens CLUSTER.maxKm in werkelijkheid én hoogstens CLUSTER.maxPx op het scherm: zo staan bolletjes die elkaar
+  // overlappen niet meer in de weg, en vallen ze uit elkaar zodra je genoeg inzoomt. Vanaf CLUSTER.noClusterZoom staat elk
+  // bolletje los. De berekening (clusterPoints) heeft geen Leaflet nodig.
+  var CLUSTER = { maxKm:5, maxPx:60, noClusterZoom:16 };
+  var MIXED_COLOR = '#6b6b66'; // cluster met bolletjes van verschillende kleur (bv. meerdere diersoorten op de homepage)
+  var DOM_RANK = { aanval:0, jonkies:1, zichtmelding:2, overig:3 }; // welke soort melding de kleur van een cluster bepaalt
+
+  function mercator(lat, lon, z){ // wereldpixels bij zoom z (tegels van 256 px), zoals Leaflet ze gebruikt
+    var scale = 256 * Math.pow(2, z), sin = Math.sin(lat * Math.PI / 180);
+    return { x:(lon + 180) / 360 * scale, y:(0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * scale };
+  }
+  function metersPerPx(lat, z){ return 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, z); }
+
+  // items: [{ id, lat, lon, w }]  ->  [{ items:[...], lat, lon, w }]  (lat/lon = middelpunt, gewogen op w = aantal meldingen)
+  // Grootste eerst als kern; alles binnen de straal van een kern hoort erbij. Zo is de uitkomst niet afhankelijk van de volgorde.
+  function clusterPoints(items, z, opts){
+    var o = { maxKm:CLUSTER.maxKm, maxPx:CLUSTER.maxPx, noClusterZoom:CLUSTER.noClusterZoom };
+    for (var k in (opts || {})) o[k] = opts[k];
+    function make(list){
+      var w = 0, lat = 0, lon = 0;
+      list.forEach(function(it){ var x = it.w || 1; w += x; lat += it.lat * x; lon += it.lon * x; });
+      return { items:list, lat:lat / w, lon:lon / w, w:w };
+    }
+    if (z >= o.noClusterZoom) return items.map(function(it){ return make([it]); });
+    var pts = items.map(function(it){ var p = mercator(it.lat, it.lon, z); return { it:it, x:p.x, y:p.y, used:false }; });
+    pts.sort(function(a, b){ return (b.it.w || 1) - (a.it.w || 1) || (a.it.id < b.it.id ? -1 : a.it.id > b.it.id ? 1 : 0); });
+    var out = [];
+    pts.forEach(function(seed){
+      if (seed.used) return;
+      seed.used = true;
+      var r = Math.min(o.maxPx, o.maxKm * 1000 / metersPerPx(seed.it.lat, z)), r2 = r * r, list = [seed.it];
+      pts.forEach(function(q){
+        if (q.used) return;
+        var dx = q.x - seed.x, dy = q.y - seed.y;
+        if (dx * dx + dy * dy <= r2){ q.used = true; list.push(q.it); }
+      });
+      out.push(make(list));
+    });
+    return out;
+  }
+
+  // Een kaartlaag die de bolletjes (items) laat zien als losse punten of clusters, afhankelijk van het zoomniveau.
+  //   item = { id, lat, lon, w (aantal meldingen), rank (lager = belangrijker voor de kleur), color, marker (het losse bolletje, met popup) }
+  //   o.clusterColor(items) mag de kleur van een cluster anders bepalen (standaard: de kleur van het belangrijkste bolletje)
+  function ClusterLayer(map, o){
+    this._map = map;
+    this._o = o || {};
+    this._items = [];
+    this._byId = {};
+    this._singles = L.layerGroup().addTo(map);   // losse bolletjes: blijven staan zolang ze los blijven (een open popup blijft dus open)
+    this._extra = L.layerGroup().addTo(map);     // clusters en de pulserende ring; wordt bij elke zoom opnieuw opgebouwd
+    this._shown = {};
+    this._halo = null;
+    map.on('zoomend', this._draw, this);
+  }
+  ClusterLayer.prototype = {
+    setItems: function(items, opts){
+      var self = this;
+      this._items = items;
+      this._byId = {};
+      items.forEach(function(it){ self._byId[it.id] = it; });
+      this._halo = (opts && opts.halo) || null;
+      this._singles.clearLayers();
+      this._shown = {};
+      this._draw();
+    },
+    has: function(id){ return !!this._byId[id]; },
+    _color: function(list){
+      if (this._o.clusterColor) return this._o.clusterColor(list);
+      var best = list.reduce(function(a, b){
+        return ((b.rank == null ? 9 : b.rank) < (a.rank == null ? 9 : a.rank) || ((b.rank == null ? 9 : b.rank) === (a.rank == null ? 9 : a.rank) && (b.w || 1) > (a.w || 1))) ? b : a;
+      });
+      return best.color || MIXED_COLOR;
+    },
+    _draw: function(){
+      var self = this, map = this._map, clusters = clusterPoints(this._items, map.getZoom(), this._o);
+      this._extra.clearLayers();
+      var keep = {};
+      clusters.forEach(function(c){
+        var color = self._color(c.items);
+        if (c.items.length === 1){
+          var it = c.items[0];
+          keep[it.id] = true;
+          if (!self._shown[it.id]){ it.marker.addTo(self._singles); self._shown[it.id] = it.marker; }
+          if (it.id === self._halo) self._ring(it.lat, it.lon, it.marker.getRadius(), color);
+          return;
+        }
+        var d = Math.max(16, Math.min(34, 13 + 3.2 * Math.sqrt(c.w))), size = Math.round(d * 2);
+        var title = c.w + ' meldingen op ' + c.items.length + ' plekken. Klik om in te zoomen.';
+        var icon = L.divIcon({ className:'wdk-cluster-icon', iconSize:[size, size],
+          html:'<div class="wdk-cluster" style="--c:' + color + '"><span>' + c.w + '</span></div>' });
+        var mk = L.marker([c.lat, c.lon], { icon:icon, title:title, alt:title, keyboard:true }).addTo(self._extra);
+        mk.on('click', function(){ self._zoomInto(c); });
+        if (c.items.some(function(it){ return it.id === self._halo; })) self._ring(c.lat, c.lon, d, color);
+      });
+      Object.keys(this._shown).forEach(function(id){
+        if (!keep[id]){ self._singles.removeLayer(self._shown[id]); delete self._shown[id]; }
+      });
+    },
+    _ring: function(lat, lon, radius, color){
+      L.circleMarker([lat, lon], { radius:radius, className:'pulse-halo', color:color, weight:2, fill:false, interactive:false }).addTo(this._extra);
+    },
+    // inzoomen tot (minstens) een deel van het cluster los komt te staan
+    _zoomInto: function(c){
+      var map = this._map, o = this._o, bounds = L.latLngBounds(c.items.map(function(it){ return [it.lat, it.lon]; }));
+      var z = Math.max(map.getZoom() + 1, Math.min(map.getBoundsZoom(bounds, false, L.point(60, 60)), CLUSTER.noClusterZoom));
+      while (z < CLUSTER.noClusterZoom && clusterPoints(c.items, z, o).length === 1) z++;
+      map.flyTo(bounds.getCenter(), z, { duration:0.5 });
+    },
+    _singleAt: function(it, z){
+      var cl = clusterPoints(this._items, z, this._o);
+      for (var i = 0; i < cl.length; i++){
+        if (cl[i].items.length === 1 && cl[i].items[0].id === it.id) return true;
+      }
+      return false;
+    },
+    // Vliegt naar een bolletje en opent zijn popup; zoomt minstens zo ver in dat het bolletje los van andere staat.
+    openItem: function(id, minZoom){
+      var it = this._byId[id], map = this._map, self = this;
+      if (!it) return false;
+      var z = Math.max(minZoom || 0, 0);
+      while (z < CLUSTER.noClusterZoom && !this._singleAt(it, z)) z++;
+      var target = L.latLng(it.lat, it.lon);
+      function open(){ if (it.marker._map) it.marker.openPopup(); }
+      if (map.getZoom() === z && map.getCenter().distanceTo(target) < 1){ open(); return true; }
+      map.once('moveend', open);   // moveend komt ná zoomend, dus het bolletje is dan al getekend
+      map.flyTo(target, z, { duration:0.6 });
+      return true;
+    }
+  };
+
+  WDK.DOM_RANK = DOM_RANK;
+  WDK.CLUSTER_MIXED_COLOR = MIXED_COLOR;
+  WDK.clusterPoints = clusterPoints;
+  WDK.clusterLayer = function(map, o){ return new ClusterLayer(map, o); };
 
   WDK.HeatLayer = HeatLayer;
   WDK.mountExplorer = mountExplorer;

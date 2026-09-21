@@ -316,6 +316,40 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(len(self.script_tags('index.html')), len(cfg['output']))   # één per databestand, geen dubbele ?v= (?v=..?v=..)
         self.assertTrue(all(t.count('?v=') == 1 for t in self.script_tags('index.html')))
 
+    def test_asset_stamps_follow_the_file_and_leave_the_rest_alone(self):
+        (self.tmp / 'assets' / 'vendor').mkdir(parents=True)
+        (self.tmp / 'assets' / 'a.js').write_text('one', encoding='utf-8')
+        (self.tmp / 'assets' / 'a.css').write_text('body{}', encoding='utf-8')
+        (self.tmp / 'assets' / 'vendor' / 'v.js').write_text('lib', encoding='utf-8')
+        page = self.tmp / 'x.html'
+        page.write_text('<link rel="stylesheet" href="assets/a.css">\n<script src="assets/a.js?v=oud"></script>\n'
+                        '<script src="assets/vendor/v.js"></script>\n<script src="assets/weg.js"></script>\n'
+                        '<link rel="icon" href="assets/favicon.svg"><link rel="preload" href="assets/f.woff2">\n'
+                        '<meta property="og:image" content="https://wildkaart.rlode.nl/assets/a.js">\n', encoding='utf-8')
+        self.assertIn('x.html', sync.stamp_html(self.tmp, self.cfg, assets=True))
+        text = page.read_text(encoding='utf-8')
+        v = sync.data_version(self.tmp / 'assets' / 'a.js')
+        self.assertIn('src="assets/a.js?v=%s"' % v, text)                                           # oud nummer vervangen
+        self.assertIn('href="assets/a.css?v=%s"' % sync.data_version(self.tmp / 'assets' / 'a.css'), text)
+        self.assertIn('src="assets/vendor/v.js?v=', text)
+        self.assertIn('src="assets/weg.js"', text)                                                  # bestaat niet: niet aanraken
+        self.assertIn('href="assets/favicon.svg"', text)                                            # geen script of stijlblad
+        self.assertIn('href="assets/f.woff2"', text)
+        self.assertIn('content="https://wildkaart.rlode.nl/assets/a.js"', text)                    # alleen verwijzingen in de pagina zelf
+        self.assertEqual(sync.stamp_html(self.tmp, self.cfg, assets=True), [])                      # tweede keer: niets te doen
+        (self.tmp / 'assets' / 'a.js').write_text('two', encoding='utf-8')
+        self.assertIn('x.html', sync.stamp_html(self.tmp, self.cfg, assets=True))                   # andere inhoud = ander nummer
+        self.assertNotIn('?v=%s' % v, page.read_text(encoding='utf-8'))
+        self.assertNotIn('?v=oud', page.read_text(encoding='utf-8'))
+
+    def test_assets_are_only_stamped_when_asked(self):
+        (self.tmp / 'assets').mkdir()
+        (self.tmp / 'assets' / 'a.js').write_text('one', encoding='utf-8')
+        page = self.tmp / 'x.html'
+        page.write_text('<script src="assets/a.js"></script>', encoding='utf-8')
+        sync.stamp_html(self.tmp, self.cfg)
+        self.assertEqual(page.read_text(encoding='utf-8'), '<script src="assets/a.js"></script>')   # de gewone sync laat de repo-pagina's met rust
+
     def test_dry_run_and_export_leave_html_alone(self):
         self.real_layout()
         before = (self.tmp / 'index.html').read_bytes()
@@ -495,6 +529,30 @@ class SyncTest(unittest.TestCase):
         _, wolf = self.places('wolven-data.js')
         got = sorted((b['lat'], b['lon'], b['ev'][0]['d']) for b in wolf)
         self.assertEqual(got, [(52.2, 5.7, '2026-09-17'), (52.2913, 5.7189, '2026-09-20'), (52.301, 5.73, '2026-09-19'), (52.31, 5.74, '2026-09-18')])
+
+    # ------------------------------------------------------------ "Zwijn met jonkies"
+    def test_choice_with_young_becomes_type_jonkies_on_the_species_page(self):
+        self.assertTrue(sync.with_young('Zwijn met jonkies'))
+        self.assertTrue(sync.with_young({'name': 'Ree met jonkies'}))
+        self.assertFalse(sync.with_young('Zwijn'))
+        self.assertEqual(sync.strip_young('Ree met jonkies'), 'Ree')
+        self.assertEqual(sync.strip_young('Hert'), 'Hert')
+        cols = [('Dier', 'single-select'), ('Datum', 'date'), ('Latitude', 'number'), ('Longitude', 'number')]
+        Mock.tables = {
+            'Zichtmeldingen': {'columns': cols, 'rows': [
+                {'Dier': 'Zwijn met jonkies', 'Datum': '2026-09-20', 'Latitude': 52.30, 'Longitude': 5.70},
+                {'Dier': 'Zwijn', 'Datum': '2026-09-19', 'Latitude': 52.31, 'Longitude': 5.71},
+                {'Dier': 'Ree met jonkies', 'Datum': '2026-09-18', 'Latitude': 52.32, 'Longitude': 5.72},
+            ]},
+            'Aanval': {'columns': cols, 'rows': []},
+        }
+        self.verified()
+        sync.pdok_reverse = lambda lat, lon, d: {'name': 'Ermelo', 'lat': lat, 'lon': lon}
+        self.assertEqual(self.run_sync('--force'), 0)
+        _, zwijn = self.places('zwijnen-data.js')
+        self.assertEqual(sorted((e['d'], e['ty']) for b in zwijn for e in b['ev']), [('2026-09-19', 'zichtmelding'), ('2026-09-20', 'jonkies')])
+        _, other = self.places('overig-data.js')
+        self.assertEqual([(e['diersoort'], e['ty']) for b in other for e in b['ev']], [('Ree', 'jonkies')])   # de naam zonder "met jonkies"
 
     # ------------------------------------------------------------ omgewisselde coördinaten en mislukte opzoekingen
     def test_fix_coords(self):

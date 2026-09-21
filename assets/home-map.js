@@ -41,25 +41,8 @@
   ];
 
   var INITIAL_CENTER = [52.18, 5.30], INITIAL_ZOOM = 7;
-  var map = L.map('nlMap', { zoomControl:false, scrollWheelZoom:true }).setView(INITIAL_CENTER, INITIAL_ZOOM);
+  var map = WDK.baseMap('nlMap', { center:INITIAL_CENTER, zoom:INITIAL_ZOOM, buttons:{ 'in':'nlZoomIn', out:'nlZoomOut', reset:'nlZoomReset' } });
   window.__nlMap = map;
-  var LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_3pk1_1_4be88f8eb009c48504d37519';
-  var DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_3pk1_1_4be88f8eb009c48504d37519';
-  var TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>-bijdragers &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>';
-  function currentMapTheme(){
-    var explicit = document.documentElement.getAttribute('data-theme');
-    if (explicit === 'dark' || explicit === 'light') return explicit;
-    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-  }
-  var tileLayer = L.tileLayer(currentMapTheme() === 'dark' ? DARK_TILES : LIGHT_TILES, {
-    maxZoom: 20,
-    subdomains: 'abcd',
-    attribution: TILE_ATTR
-  }).addTo(map);
-  function syncTiles(){ tileLayer.setUrl(currentMapTheme() === 'dark' ? DARK_TILES : LIGHT_TILES); }
-  var themeToggleBtn = document.getElementById('themeToggle');
-  if (themeToggleBtn) themeToggleBtn.addEventListener('click', function(){ setTimeout(syncTiles, 0); });
-  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncTiles);
 
   // Veluwe ter oriëntatie, zodat de link met de wolven-/zwijnenkaart duidelijk is
   L.circle([52.24, 5.85], {
@@ -87,10 +70,6 @@
 
   var mapWrap = svg.closest('.map-wrap');
 
-  document.getElementById('nlZoomIn').addEventListener('click', function(){ map.zoomIn(); });
-  document.getElementById('nlZoomOut').addEventListener('click', function(){ map.zoomOut(); });
-  document.getElementById('nlZoomReset').addEventListener('click', function(){ map.setView(INITIAL_CENTER, INITIAL_ZOOM); });
-
   // ---- plaats/provincie zoeken ----
   var normalize = WDK.normalizeText;
   var stripExact = WDK.stripExact, nameHtml = WDK.nameHtml;
@@ -103,33 +82,17 @@
       return acc.concat(src.rows.slice().sort(function(a, b){ return b.t - a.t; }).map(function(b){ return { key:'melding::'+src.speciesKey+'::'+b.id, n:b.n, kind:src.label }; }));
     }, []));
 
-  function renderResults(matches, q){
-    if (!matches.length){
-      searchResultsEl.innerHTML = '<div class="search-empty">Geen plaats gevonden voor &ldquo;'+WDK.esc(q)+'&rdquo;.</div>';
-      searchResultsEl.hidden = false;
-      return;
-    }
-    searchResultsEl.innerHTML = matches.map(function(p){
-      return '<div class="search-item" data-key="'+p.key.replace(/"/g,'&quot;')+'">' +
-        '<span class="si-name">'+nameHtml(p.n)+'</span><span class="si-meta">'+p.kind+'</span>' +
-        '</div>';
-    }).join('');
-    searchResultsEl.hidden = false;
-  }
-
-  function doSearch(){
-    var q = normalize(searchInput.value.trim());
-    if (!q){ searchResultsEl.hidden = true; searchResultsEl.innerHTML=''; return; }
-    var starts = [], contains = [];
+  function findPlaces(q){
+    var n = normalize(q), starts = [], contains = [];
     allPlaces.forEach(function(p){
-      var n = normalize(p.n);
-      if (n.indexOf(q) === 0) starts.push(p);
-      else if (n.indexOf(q) !== -1) contains.push(p);
+      var name = normalize(p.n);
+      if (name.indexOf(n) === 0) starts.push(p);
+      else if (name.indexOf(n) !== -1) contains.push(p);
     });
     // meerdere exacte punten met dezelfde plaatsnaam tonen we als één zoekresultaat (de drukste)
     var seen = {};
     var hits = starts.concat(contains).filter(function(p){ var k = p.kind+'|'+p.n; if (seen[k]) return false; seen[k] = true; return true; });
-    renderResults(hits.slice(0,8), searchInput.value.trim());
+    return hits.slice(0,8).map(function(p){ return { key:p.key, label:stripExact(p.n).base, name:nameHtml(p.n), meta:p.kind }; });
   }
 
   function selectPlace(key){
@@ -138,23 +101,24 @@
     if (!entry) return;
     searchInput.value = stripExact(entry.n).base;
     searchInput.blur();
+    var cl = window.__nlCluster, mkey = entry.meldingKey;
     // verborgen door het filter (of een uitgezette soort)? dan het filter wissen zodat de melding zichtbaar wordt
-    if (entry.meldingKey && window.__nlExplorer && !(window.__meldingMarkers && window.__meldingMarkers[entry.meldingKey])){
+    if (mkey && window.__nlExplorer && cl && !cl.has(mkey)){
       window.__nlExplorer.set({ soort:null, types:null, van:null, tot:null });
     }
-    map.flyTo([entry.lat, entry.lon], entry.zoom, { duration:0.6 });
-    if (entry.meldingKey){
-      // pas bij het openen opzoeken: bij een ?plaats=-link bestaan de bolletjes op dit moment nog niet
-      setTimeout(function(){
-        var m = window.__meldingMarkers && window.__meldingMarkers[entry.meldingKey];
-        if (m) m.openPopup();
-      }, 650);
+    if (mkey && cl && cl.has(mkey)){
+      cl.openItem(mkey, entry.zoom); // zoomt zo nodig verder in, zodat de melding los van een cluster staat
+    } else {
+      map.flyTo([entry.lat, entry.lon], entry.zoom, { duration:0.6 });
+      if (mkey){
+        // bij een ?plaats=-link bestaan de bolletjes op dit moment nog niet (home-stats.js komt later): pas bij het openen opzoeken
+        setTimeout(function(){
+          var c = window.__nlCluster;
+          if (c && c.has(mkey)) c.openItem(mkey, entry.zoom);
+        }, 650);
+      }
     }
-    setTimeout(function(){
-      var r = mapWrap.getBoundingClientRect();
-      var visible = r.top >= 0 && r.bottom <= (window.innerHeight || document.documentElement.clientHeight);
-      if (!visible) mapWrap.scrollIntoView({ behavior:'smooth', block:'center' });
-    }, 80);
+    WDK.revealMap(mapWrap);
     if (window.history && window.history.replaceState){
       try {
         var url = new URL(window.location.href);
@@ -166,26 +130,7 @@
   window.__selectPlace = selectPlace;
   window.__placeIndex = placeIndex;
 
-  searchInput.addEventListener('input', doSearch);
-  searchInput.addEventListener('focus', function(){ if (searchInput.value.trim()) doSearch(); });
-  searchInput.addEventListener('keydown', function(ev){
-    if (ev.key === 'Enter'){
-      var first = searchResultsEl.querySelector('.search-item');
-      if (first) selectPlace(first.getAttribute('data-key'));
-      ev.preventDefault();
-    } else if (ev.key === 'Escape'){
-      searchResultsEl.hidden = true;
-    }
-  });
-  searchResultsEl.addEventListener('click', function(ev){
-    var item = ev.target.closest('.search-item');
-    if (item) selectPlace(item.getAttribute('data-key'));
-  });
-  document.addEventListener('click', function(ev){
-    if (!ev.target.closest('.map-search')) searchResultsEl.hidden = true;
-  });
-
-  window.addEventListener('resize', function(){ map.invalidateSize(); });
+  WDK.mountSearch({ input:searchInput, results:searchResultsEl, find:findPlaces, onSelect:function(item){ selectPlace(item.key); } });
 
   // Deelbare link: ?plaats=Naam opent de kaart direct op die locatie (provincie, plaats of melding)
   (function(){

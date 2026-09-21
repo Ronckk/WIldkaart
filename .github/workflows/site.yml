@@ -92,9 +92,14 @@ jobs:
       - name: Site-map samenstellen
         run: |
           mkdir _site
-          cp index.html wolven.html zwijnen.html overig.html over.html melden.html 404.html robots.txt _site/
+          cp index.html wolven.html zwijnen.html overig.html over.html melden.html 404.html robots.txt google3490471582df8f40.html _site/
           cp -r assets data _site/
           python3 tools/build_sitemap.py --out _site/sitemap.xml
+
+      # ?v=<vingerafdruk> achter alle eigen scripts en stijlbladen (op de kopie in _site): na een publicatie halen browsers en
+      # GitHub Pages (dat bestanden ~10 minuten bewaart) meteen de nieuwe bestanden, en nooit een oud script bij een nieuwe pagina
+      - name: Versienummers achter scripts en stijlbladen
+        run: python3 tools/seatable_sync.py --stamp --assets --root _site
 
       - uses: actions/configure-pages@v5
 

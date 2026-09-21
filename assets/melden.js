@@ -46,28 +46,7 @@
   });
 
   // ---------------------------------------------------------------- kaart
-  var map = L.map('map', { zoomControl:false, scrollWheelZoom:true }).setView(INITIAL_CENTER, INITIAL_ZOOM);
-  var LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_3pk1_1_4be88f8eb009c48504d37519';
-  var DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_3pk1_1_4be88f8eb009c48504d37519';
-  var TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>-bijdragers &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>';
-  function currentMapTheme(){
-    var explicit = document.documentElement.getAttribute('data-theme');
-    if (explicit === 'dark' || explicit === 'light') return explicit;
-    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-  }
-  var tileLayer = L.tileLayer(currentMapTheme() === 'dark' ? DARK_TILES : LIGHT_TILES, {
-    maxZoom: 20,
-    subdomains: 'abcd',
-    attribution: TILE_ATTR
-  }).addTo(map);
-  function syncTiles(){ tileLayer.setUrl(currentMapTheme() === 'dark' ? DARK_TILES : LIGHT_TILES); }
-  var themeToggleBtn = $('themeToggle');
-  if (themeToggleBtn) themeToggleBtn.addEventListener('click', function(){ setTimeout(syncTiles, 0); });
-  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncTiles);
-  window.addEventListener('resize', function(){ map.invalidateSize(); });
-
-  $('zoomIn').addEventListener('click', function(){ map.zoomIn(); });
-  $('zoomOut').addEventListener('click', function(){ map.zoomOut(); });
+  var map = WDK.baseMap('map', { center:INITIAL_CENTER, zoom:INITIAL_ZOOM }); // tegels, licht/donker en de zoomknoppen: assets/map-base.js
 
   var marker = null, accuracy = null, lookupToken = 0;
 
@@ -175,64 +154,21 @@
 
   // ---------------------------------------------------------------- plaats of straat zoeken (verplaatst alleen de kaart)
   // De pin zetten we hier bewust niet: het middelpunt van een dorp is niet de plek van je waarneming.
-  var searchInput = $('placeSearch'), resultsEl = $('searchResults'), searchTimer = null, searchToken = 0;
   var KIND = { woonplaats:['Plaats', 13], weg:['Straat', 15], gemeente:['Gemeente', 12] };
 
-  function showResults(docs, q){
-    if (!docs.length){
-      resultsEl.innerHTML = '<div class="search-empty">Niets gevonden voor &ldquo;' + WDK.esc(q) + '&rdquo;.</div>';
-    } else {
-      resultsEl.innerHTML = docs.map(function(d, i){
-        return '<div class="search-item" role="button" tabindex="0" data-i="' + i + '"><span class="si-name">' + WDK.esc(d.weergavenaam) + '</span>' +
-          '<span class="si-meta">' + KIND[d.type][0] + '</span></div>';
-      }).join('');
-    }
-    resultsEl.hidden = false;
-    resultsEl._docs = docs;
-  }
-  function pick(i){
-    var d = (resultsEl._docs || [])[i];
-    if (!d) return;
-    resultsEl.hidden = true;
-    searchInput.value = d.weergavenaam;
-    searchInput.blur();
-    map.flyTo([d.lat, d.lon], KIND[d.type][1], { duration:0.6 });
-  }
-  function search(){
-    var q = searchInput.value.trim();
-    if (q.length < 2){ resultsEl.hidden = true; return; }
-    var mine = ++searchToken;
-    fetch(PDOK + 'free?rows=8&fl=weergavenaam,centroide_ll,type&fq=' + encodeURIComponent('type:(woonplaats OR weg OR gemeente)') + '&q=' + encodeURIComponent(q))
+  function findPlaces(q){
+    return fetch(PDOK + 'free?rows=8&fl=weergavenaam,centroide_ll,type&fq=' + encodeURIComponent('type:(woonplaats OR weg OR gemeente)') + '&q=' + encodeURIComponent(q))
       .then(function(r){ return r.json(); }).then(function(j){
-        if (mine !== searchToken) return;
-        var docs = ((j.response && j.response.docs) || []).map(function(d){
+        return ((j.response && j.response.docs) || []).map(function(d){
           var m = /POINT\(([-\d.]+) ([-\d.]+)\)/.exec(d.centroide_ll || '');
-          return m && KIND[d.type] ? { weergavenaam:d.weergavenaam, type:d.type, lat:parseFloat(m[2]), lon:parseFloat(m[1]) } : null;
+          return m && KIND[d.type] ? { key:d.weergavenaam, label:d.weergavenaam, name:WDK.esc(d.weergavenaam), meta:KIND[d.type][0],
+            lat:parseFloat(m[2]), lon:parseFloat(m[1]), zoom:KIND[d.type][1] } : null;
         }).filter(Boolean);
-        showResults(docs, q);
-      }).catch(function(){
-        if (mine === searchToken){
-          resultsEl.innerHTML = '<div class="search-empty">Zoeken lukt nu niet. Verplaats de kaart zelf, of gebruik je locatie.</div>';
-          resultsEl.hidden = false;
-        }
       });
   }
-  searchInput.addEventListener('input', function(){ clearTimeout(searchTimer); searchTimer = setTimeout(search, 300); });
-  searchInput.addEventListener('keydown', function(ev){
-    if (ev.key === 'Enter'){ ev.preventDefault(); if (!resultsEl.hidden && resultsEl._docs && resultsEl._docs.length) pick(0); else search(); }
-    else if (ev.key === 'Escape') resultsEl.hidden = true;
-  });
-  resultsEl.addEventListener('click', function(ev){
-    var item = ev.target.closest('.search-item');
-    if (item) pick(parseInt(item.getAttribute('data-i'), 10));
-  });
-  resultsEl.addEventListener('keydown', function(ev){
-    var item = ev.target.closest('.search-item');
-    if (item && (ev.key === 'Enter' || ev.key === ' ')){ ev.preventDefault(); pick(parseInt(item.getAttribute('data-i'), 10)); }
-  });
-  document.addEventListener('click', function(ev){
-    if (!ev.target.closest('.map-search')) resultsEl.hidden = true;
-  });
+  WDK.mountSearch({ input:$('placeSearch'), results:$('searchResults'), find:findPlaces, debounce:300,
+    error:'Zoeken lukt nu niet. Verplaats de kaart zelf, of gebruik je locatie.',
+    onSelect:function(item){ map.flyTo([item.lat, item.lon], item.zoom, { duration:0.6 }); } });
 
   setType(type);
 })();

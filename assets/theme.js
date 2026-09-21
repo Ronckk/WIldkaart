@@ -22,4 +22,12 @@
       applyTheme(currentTheme() === 'dark' ? 'light' : 'dark');
     });
   }
+
+  // ---- de actieve knop in het menu (de pagina waar je bent) scrolt naar boven ----
+  var activeNav = document.querySelector('.nav-link.active');
+  if (activeNav){
+    activeNav.addEventListener('click', function(){
+      window.scrollTo({ top:0, behavior:'smooth' });
+    });
+  }
 })();

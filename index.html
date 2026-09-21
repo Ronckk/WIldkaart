@@ -64,12 +64,10 @@
   </header>
   <noscript><div class="notice">Voor de kaart en de cijfers op deze pagina is JavaScript nodig. Schakel JavaScript in, of gebruik een andere browser.</div></noscript>
 
-  <section class="animal-card" id="reportCta"></section>
-
   <section class="animal-card">
     <h2 class="card-title">Net binnen gekomen meldingen</h2>
     <p class="sub" id="lastUpdateNote">Meldingen laden&hellip;</p>
-    <div class="report-table-wrap">
+    <div class="report-table-wrap" tabindex="0" role="region" aria-label="De laatste 25 meldingen (scrollbaar)">
       <table class="report-table">
         <thead><tr><th>Plaats</th><th>Datum</th><th>Dier</th><th>Type</th></tr></thead>
         <tbody id="recentReportsBody">
@@ -78,6 +76,8 @@
       </table>
     </div>
   </section>
+
+  <section class="animal-card" id="reportCta"></section>
 
   <section class="animal-card">
     <h2 class="card-title">Landelijke kaart</h2>
@@ -97,7 +97,6 @@
     <div class="map-foot">
       <div class="legend" id="mapLegend"></div>
     </div>
-    <div class="card-foot">Meldingen komen uit dezelfde bronnen als de wolven- en zwijnenkaart. Klik op een stip voor details.</div>
   </section>
 
   <section class="animal-card">
@@ -155,6 +154,7 @@
 <script src="data/overig-data.js?v=67fe578d2a"></script>
 <script src="assets/site.js"></script>
 <script src="assets/vendor/leaflet/leaflet.js"></script>
+<script src="assets/map-base.js"></script>
 <script src="assets/map-tools.js"></script>
 <script src="assets/home-map.js"></script>
 <script src="assets/home-stats.js"></script>

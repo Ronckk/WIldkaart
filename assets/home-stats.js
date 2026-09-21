@@ -9,14 +9,9 @@
   var SPECIES = WDK.loadAll().map(function(d){
     var sp = d.species;
     return { key:sp.key, label:sp.label, plural:sp.plural, mapName:sp.mapName, emoji:sp.emoji, color:sp.color, page:sp.page,
-      layer: L.layerGroup().addTo(map), rows: d.all, data: d };
+      rows: d.all, data: d };
   });
   if (!SPECIES.length) return;
-
-  function radius(count, maxC){
-    var R0 = 5, R1 = 16;
-    return R0 + (R1-R0) * Math.sqrt(count/maxC);
-  }
 
   function popupHtml(species, b){
     var html = '<div class="tt-name">'+species.emoji+' '+nameHtml(b.n)+'</div>';
@@ -54,54 +49,40 @@
     rows: SPECIES.reduce(function(all, s){ return all.concat(s.rows); }, [])
   });
   window.__nlExplorer = EX;
-  window.__meldingMarkers = {};
+  // bolletjes die dicht bij elkaar liggen (binnen 5 km) worden één cluster; hoort het cluster bij één soort, dan krijgt het die kleur
+  var CL = WDK.clusterLayer(map, { clusterColor: function(list){
+    var c = list[0].color;
+    return list.every(function(it){ return it.color === c; }) ? c : WDK.CLUSTER_MIXED_COLOR;
+  } });
+  window.__nlCluster = CL;
 
   // tekent de bolletjes opnieuw voor het huidige filter (en geeft de punten door aan de hitte-laag)
   function renderMap(){
     var f = EX.get();
     var visible = f.soort || SPECIES.map(function(s){ return s.key; });
-    var latest = null, total = 0, places = 0;
-    window.__meldingMarkers = {};
+    var latest = null, total = 0, places = 0, items = [];
     SPECIES.forEach(function(species){
       var on = visible.indexOf(species.key) > -1;
-      species.layer.clearLayers();
-      if (on && !map.hasLayer(species.layer)) map.addLayer(species.layer);
-      if (!on && map.hasLayer(species.layer)) map.removeLayer(species.layer);
       if (species.legendItem) species.legendItem.style.opacity = on ? '' : '.45'; // uitgezette soort dimmen in de legenda
       if (!on) return;
       var rows = WDK.applyFilter(species.rows, species.key, f);
-      var maxCount = 1;
-      rows.forEach(function(b){ if (b.t > maxCount) maxCount = b.t; });
-      rows.forEach(function(b){
-        var m = L.circleMarker([b.lat, b.lon], {
-          radius: radius(b.t, maxCount),
-          color: 'var(--map-surface)',
-          weight: 1.2,
-          fillColor: species.color,
-          fillOpacity: 0.85
-        });
-        m.bindPopup(popupHtml(species, b), { maxWidth:240 });
-        m.addTo(species.layer);
-        window.__meldingMarkers[species.key + '::' + b.id] = m;
-        total += b.t; places++;
-        if (b.ev.length && (!latest || b.ev[0].d > latest.b.ev[0].d)) latest = { b:b, species:species, maxCount:maxCount };
+      var pm = WDK.placeMarkers(rows, {
+        color:function(){ return species.color; },
+        popup:function(b){ return popupHtml(species, b); },
+        radius:[5, 16], weight:1.2,
+        id:function(b){ return species.key + '::' + b.id; }
       });
+      items = items.concat(pm.items);
+      rows.forEach(function(b){ total += b.t; places++; });
+      if (pm.latest && (!latest || pm.latest.ev[0].d > latest.b.ev[0].d)) latest = { b:pm.latest, id:pm.latestId };
     });
-    if (latest){
-      L.circleMarker([latest.b.lat, latest.b.lon], {
-        radius: radius(latest.b.t, latest.maxCount),
-        className: 'pulse-halo',
-        color: latest.species.color,
-        weight: 2,
-        fill: false,
-        interactive: false
-      }).addTo(latest.species.layer);
-    }
+    CL.setItems(items, { halo: latest && latest.id });
     EX.setSummary(total, places);
   }
   renderMap();
 
-  // ---- "net binnen gekomen meldingen" tabel: top 10 meest recente meldingen over alle soorten ----
+  // ---- "net binnen gekomen meldingen" tabel: de RECENT_MAX meest recente meldingen over alle soorten (het venster scrolt) ----
+  var RECENT_MAX = 25;
   var events = [];
   SPECIES.forEach(function(species){
     WDK.events(species.rows, species).forEach(function(e){ events.push(e); });
@@ -121,10 +102,10 @@
     }
   }
 
-  var top10 = events.slice(0, 10);
+  var recent = events.slice(0, RECENT_MAX);
   var tbody = document.getElementById('recentReportsBody');
-  if (tbody && top10.length){
-    tbody.innerHTML = top10.map(function(e, i){
+  if (tbody && recent.length){
+    tbody.innerHTML = recent.map(function(e, i){
       var typeLabel = TYPE_LABEL[e.ty] || e.ty;
       var typeClass = e.ty === 'zichtmelding' ? ' class="rt-type-zicht"' : (e.ty === 'aanval' ? ' class="rt-type-aanval"' : '');
       return '<tr>' +

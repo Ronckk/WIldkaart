@@ -19,6 +19,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
+    def end_headers(self):
+        # nooit uit de cache: na een wijziging in een script of stijlblad toont een gewone verversing meteen de nieuwe versie
+        self.send_header('Cache-Control', 'no-store')
+        super().end_headers()
+
     def translate_path(self, path):
         p = super().translate_path(path)
         if not os.path.exists(p) and os.path.exists(p + '.html'):
