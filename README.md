@@ -79,8 +79,10 @@ heeft dan de site nu, weigert het script dat zonder `--force` (beveiliging tegen
 allereerste oude versie blijft bewaard in `tools/backup/`, de vorige versie steeds als `data/*.js.bak`.
 
 **Hoe een rij een stip wordt.** Verwachte kolommen (namen staan in `tools/seatable.config.json`, hoofdletters maken niet
-uit): `Dier` (Wolf/Zwijn), `Datum` (met of zonder tijd; tijdzone wordt naar Nederlandse tijd omgezet) en `Locatie`
-(geolocatie). Bij `Aanval` ook `Gedode dier` en `Aantal dood`. De tabel bepaalt het type (zichtmelding of aanval); een
+uit): `Dier` (Wolf/Zwijn), `Datum` (met of zonder tijd; tijdzone wordt naar Nederlandse tijd omgezet) en de plek: twee
+getalkolommen `Latitude` en `Longitude` (die vult de kaartpagina in, zie "Meldformulieren") of, voor oudere rijen, een
+geolocatie-kolom `Locatie`. Staat er in een rij een breedte- en lengtegraad, dan gaat die voor; anders wordt `Locatie`
+gelezen. Ook `52,29`, `52.29°` en `52.29 N` worden begrepen. Bij `Aanval` ook `Gedode dier` en `Aantal dood`. De tabel bepaalt het type (zichtmelding of aanval); een
 kolom `Type` mag dat overschrijven. `Tijd`, `Regio` en `Plaats` mogen erbij als je ze toevoegt.
 
 - **Verificatie (moderatie):** elke tabel heeft een checkbox-kolom `Verificatie`. Een melding komt pas op de site als
@@ -120,17 +122,42 @@ kolom `Type` mag dat overschrijven. `Tijd`, `Regio` en `Plaats` mogen erbij als 
 - Twee dezelfde plaatsnamen op verschillende plekken zijn twee stippen; de website houdt ze uit elkaar met een intern
   `id`.
 
-Testen zonder SeaTable of internet: `python3 tools/test_seatable_sync.py` (en `python3 tools/test_site_seo.py` voor de pagina's) (nep-SeaTable en nep-PDOK; 29 tests voor de koppeling, 15 voor de pagina's,
+Testen zonder SeaTable of internet: `python3 tools/test_seatable_sync.py` (en `python3 tools/test_site_seo.py` voor de pagina's) (nep-SeaTable en nep-PDOK; 31 tests voor de koppeling, 16 voor de pagina's,
 waaronder een rondje oude data → SeaTable → site, met de bevroren oude data in `tools/fixtures/`). Tabellen en kolommen bekijken: `--inspect` (met `--sample`
 twee voorbeeldrijen). De oude data als CSV exporteren voor een import in SeaTable kan met `--export-legacy`.
 
 ## Meldformulieren
 
-Bezoekers melden via twee SeaTable-formulieren ("Meld een zichtmelding" en "Meld een aanval op vee"). De adressen staan
-op één plek: `FORMS` bovenin `assets/site.js`. De knoppen staan op de homepage (onder de kop, met beide knoppen), op de
-wolvenpagina (onder de kaart, beide knoppen) en op de zwijnenpagina (onder de kaart, alleen de zichtmelding); ook de
-oproep in de "nog te weinig meldingen"-kaart linkt naar het formulier. Verandert een formulieradres, pas dan alleen
-`FORMS` aan. Nieuwe inzendingen wachten op jouw vinkje in de kolom `Verificatie` (zie hierboven).
+Bezoekers melden via twee SeaTable-formulieren ("Meld een zichtmelding" en "Meld een aanval op vee"), maar ze komen er
+eerst langs de pagina `melden.html` (`/melden`). Daar kiezen ze de plek op de kaart (tikken, de pin verslepen, "Gebruik mijn
+locatie" met de GPS van de telefoon, of een plaats/straat zoeken om de kaart te verplaatsen) en gaan dan door naar het
+SeaTable-formulier met de coördinaten al ingevuld; ze vullen nog diersoort en datum in. Reden: op een telefoon toont
+SeaTable bij een geolocatie-kolom alleen losse lengte- en breedtegraadvelden, en die kunnen veel mensen niet invullen.
+
+De pagina is gewone statische HTML/JS (`melden.html`, `assets/melden.js`, `assets/melden.css`): geen server, geen token, niets
+dat naar SeaTable schrijft. De plek reist mee in het adres van het formulier
+(`.../forms/<id>/?prefill_Latitude=52.2913&prefill_Longitude=5.7189`); de plaatsnaam bij de pin komt (in de browser van de
+bezoeker) van PDOK. De adressen van de formulieren, de pagina-adressen en de namen van de kolommen die worden ingevuld staan
+op één plek: `FORMS` en `PREFILL` bovenin `assets/site.js`. De knoppen op de homepage, de wolven- en zwijnenpagina en de
+links in de voettekst wijzen naar `/melden?type=zichtmelding` of `?type=aanval`.
+
+**Eenmalig in SeaTable (per tabel, dus `Zichtmeldingen` én `Aanval`):**
+
+1. Voeg twee kolommen van het type **Getal** toe: `Latitude` en `Longitude` (staat er "precisie" aan, zet die dan uit of op 6
+   decimalen, anders wordt de plek afgerond). De sync leest ook een tekstkolom, met komma of graden-teken. Andere namen kan ook, maar dan moet `PREFILL` in
+   `assets/site.js` en `columns.lat/lon` in `tools/seatable.config.json` meeveranderen (een test controleert dat).
+2. Zet beide kolommen in het formulier, als verplicht veld. Zet ze **niet** verborgen: dan ziet de melder ook wat er wordt
+   doorgegeven en kan hij het aanpassen.
+3. Haal het veld `Locatie` uit het formulier (de kolom zelf laat je staan: oude meldingen blijven werken). Anders moet de melder
+   nog steeds een locatie invullen.
+4. Test met: `https://cloud.seatable.io/dtable/forms/<id>/?prefill_Latitude=52.29&prefill_Longitude=5.72`. Beide velden
+   moeten al gevuld zijn. (Een geolocatie-kolom kan SeaTable niet vooraf invullen; tekst en getallen wel.)
+
+Zet je deze wijziging online **voordat** de kolommen in de formulieren staan, dan kiezen bezoekers een plek die niet
+meekomt. Doe dus eerst de stappen hierboven, dan pas de site.
+
+Nieuwe inzendingen wachten op jouw vinkje in de kolom `Verificatie` (zie hierboven). Zonder JavaScript verwijst `melden.html`
+rechtstreeks naar de formulieren.
 
 ## Menubalk en voettekst
 
@@ -139,7 +166,7 @@ De menubalk en de voettekst (met een eigen achtergrondkleur over de volle breedt
 gezet. Wijzig je iets (een link, een kolom, de tekst), pas dan het sjabloon aan en draai
 `python3 tools/build_shell.py`; de pagina's niet met de hand aanpassen. `--check` controleert alleen (en draait mee in
 `test_site_seo.py`). De opmaak staat in `assets/shell.css`; de kleur van de balken is `--bar-bg` bovenin dat bestand.
-De formulieradressen in de voettekst komen uit `FORMS` in `assets/site.js`. Pagina-eigen voetnoten (bv. de uitleg over
+De meldlinks in de voettekst (`melden?type=...`) staan in het sjabloon zelf. Pagina-eigen voetnoten (bv. de uitleg over
 plaatsnamen) staan per pagina in `PAGES` in het script.
 
 ## Vindbaarheid (SEO)

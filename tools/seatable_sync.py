@@ -91,6 +91,14 @@ def to_float(v):
         return None
 
 
+def coord_float(v):
+    """Een coördinaat uit een tekst- of getalkolom. Bezoekers passen de vooraf ingevulde waarde soms aan of typen er zelf een:
+    ook "52,1234", "52.1234°" en "52.1234 N" (of "5.6 E"/"5.6 O") worden gelezen."""
+    if isinstance(v, str):
+        v = re.sub(r'\s*°?\s*[NnEeOo]?$', '', v.strip())
+    return to_float(v)
+
+
 def parse_when(value):
     """-> (datum 'YYYY-MM-DD' of None, tijd 'HH:MM' of None). Tijden met tijdzone worden naar Nederlandse tijd omgezet;
     00:00 geldt als "geen tijd" (een datumkolom heeft geen tijdstip)."""
@@ -297,8 +305,8 @@ def read_table(sea_rows, tmeta, table_cfg, cfg, warn):
         if tm is None and m['tijd']:
             tm = parse_time(row.get(m['tijd']))
         gval = row.get(geo) if geo else None
-        lat = to_float(row.get(m['lat'])) if m['lat'] else None
-        lon = to_float(row.get(m['lon'])) if m['lon'] else None
+        lat = coord_float(row.get(m['lat'])) if m['lat'] else None
+        lon = coord_float(row.get(m['lon'])) if m['lon'] else None
         if lat is None or lon is None:
             lat, lon = latlon_from(gval)
         lat, lon, coord_state = fix_coords(lat, lon, cfg.get('coords_box', [49.0, 55.0, 2.0, 9.0]))

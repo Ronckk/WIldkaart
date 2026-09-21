@@ -92,7 +92,7 @@ jobs:
       - name: Site-map samenstellen
         run: |
           mkdir _site
-          cp index.html wolven.html zwijnen.html overig.html over.html 404.html robots.txt _site/
+          cp index.html wolven.html zwijnen.html overig.html over.html melden.html 404.html robots.txt _site/
           cp -r assets data _site/
           python3 tools/build_sitemap.py --out _site/sitemap.xml
 

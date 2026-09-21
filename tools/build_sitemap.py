@@ -29,6 +29,7 @@ PAGES = [
     ('zwijnen', 'zwijnen.html', ['data/zwijnen-data.js']),
     ('overig',  'overig.html',  ['data/overig-data.js']),
     ('over',    'over.html',    []),
+    ('melden',  'melden.html',  []),
 ]
 
 

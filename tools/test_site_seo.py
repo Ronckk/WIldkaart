@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BASE = 'https://wildkaart.rlode.nl/'
-INDEXABLE = {'index.html': '', 'wolven.html': 'wolven', 'zwijnen.html': 'zwijnen', 'overig.html': 'overig', 'over.html': 'over'}
+INDEXABLE = {'index.html': '', 'wolven.html': 'wolven', 'zwijnen.html': 'zwijnen', 'overig.html': 'overig', 'over.html': 'over', 'melden.html': 'melden'}
 
 
 def read(name):
@@ -92,13 +92,14 @@ class SeoTest(unittest.TestCase):
         self.assertNotRegex(r, r'(?m)^Disallow:\s*/\s*$')
 
     def test_internal_links_and_anchors_exist(self):
-        pages = {'', 'wolven', 'zwijnen', 'overig', 'over'}
+        pages = {'', 'wolven', 'zwijnen', 'overig', 'over', 'melden'}
         over_ids = set(re.findall(r'id="([^"]+)"', read('over.html')))
         scripts = sorted(str(f.relative_to(ROOT)) for f in (ROOT / 'assets').glob('*.js'))
         for name in list(INDEXABLE) + ['404.html'] + scripts:
             text = read(name)
-            for href in re.findall(r'href="((?:\./|wolven|zwijnen|overig|over)[^"]*)"', text.replace('\\"', '"')):
+            for href in re.findall(r'href="((?:\./|wolven|zwijnen|overig|over|melden)[^"]*)"', text.replace('\\"', '"')):
                 path, _, frag = href.partition('#')
+                path = path.partition('?')[0]     # 'melden?type=aanval' is de pagina 'melden'
                 with self.subTest(page=name, href=href):
                     self.assertIn(path.replace('./', ''), pages)
                     if path == 'over' and frag:
@@ -113,6 +114,20 @@ class SeoTest(unittest.TestCase):
         for f in list(INDEXABLE) + ['404.html', 'robots.txt', 'sitemap.xml', 'assets/og-image.png']:
             self.assertTrue((ROOT / f).exists(), f)
 
+    def test_report_buttons_lead_to_the_map_page_and_use_columns_the_sync_reads(self):
+        js = read('assets/site.js')
+        forms = dict(re.findall(r"(zichtmelding|aanval):\s*\{[^}]*?url:'([^']+)'", js))
+        self.assertEqual(set(forms), {'zichtmelding', 'aanval'})
+        for key in forms:
+            self.assertIn("page:'melden?type=%s'" % key, js)
+        # zonder JavaScript staan de directe formulierlinks in de <noscript> van de meldpagina: die horen bij dezelfde formulieren
+        noscript = re.search(r'<noscript>(.*?)</noscript>', read('melden.html'), re.S).group(1)
+        self.assertEqual(set(re.findall(r'href="(https://cloud\.seatable\.io/dtable/forms/[^"]+)"', noscript)), set(forms.values()))
+        # de kolommen die de kaartpagina invult moeten dezelfde zijn als die de sync leest
+        lat, lon = re.search(r"PREFILL = \{ lat:'([^']+)', lon:'([^']+)' \}", js).groups()
+        cols = json.loads(read('tools/seatable.config.json'))['columns']
+        self.assertIn(lat.lower(), [c.lower() for c in cols['lat']])
+        self.assertIn(lon.lower(), [c.lower() for c in cols['lon']])
 
     def test_menu_and_footer_match_the_shared_template(self):
         import subprocess, sys
@@ -128,12 +143,12 @@ class SeoTest(unittest.TestCase):
                     self.assertEqual(s.count('<!-- %s -->' % marker), 1)
                     self.assertEqual(s.count('<!-- /%s -->' % marker), 1)
 
-    def test_footer_form_links_match_the_forms_in_site_js(self):
+    def test_footer_report_links_match_the_forms_in_site_js(self):
         js = read('assets/site.js')
         footer = read('index.html')
         for key in ('zichtmelding', 'aanval'):
-            url = re.search(r"%s:\s*\{[^}]*url:'([^']+)'" % key, js).group(1)
-            self.assertIn('href="%s"' % url, footer)
+            page = re.search(r"%s:\s*\{[^}]*page:'([^']+)'" % key, js).group(1)
+            self.assertIn('href="%s"' % page, footer)
 
 
     def test_pages_load_fonts_and_leaflet_from_the_site_itself(self):

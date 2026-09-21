@@ -1,0 +1,43 @@
+/* Opmaak van de pagina "Meld een waarneming" (melden.html), bovenop species.css en map-tools.css. */
+
+.map-card > .mp-title{ margin:6px 4px 4px; }
+.map-card > .mp-lead{ margin:0 4px 14px; }
+
+/* knop "Gebruik mijn locatie" naast de zoekbalk */
+.mp-tools{ display:flex; gap:10px; align-items:stretch; margin-bottom:10px; }
+.mp-tools .map-search{ flex:1; margin-bottom:0; min-width:0; }
+.mp-tools .rc-btn{ flex:none; }
+@media (max-width:640px){
+  .mp-tools{ flex-direction:column; }
+  .mp-tools .rc-btn{ justify-content:center; }
+}
+
+/* de gedeelde .rc-btn is gemaakt voor links; hier is hij ook een knop */
+button.rc-btn{ appearance:none; cursor:pointer; }
+.rc-btn:disabled{ opacity:.6; cursor:progress; }
+.rc-btn.is-disabled{ opacity:.45; cursor:not-allowed; }
+.rc-btn.is-disabled:hover{ filter:none; }
+
+/* kruisje in plaats van de handgreep, zodat duidelijk is dat tikken een plek kiest */
+#map.leaflet-grab{ cursor:crosshair; }
+#map.leaflet-dragging.leaflet-grab{ cursor:grabbing; }
+
+.mp-foot{ align-items:baseline; }
+.mp-picked{ margin:0; flex:1 1 280px; font-size:13px; line-height:1.5; color:var(--ink-2); }
+.mp-place{ color:var(--ink); }
+.mp-coords{ font-family:"IBM Plex Mono", monospace; font-size:11.5px; color:var(--muted); white-space:nowrap; }
+.mp-warn{ color:var(--s-aanval); font-weight:600; }
+.mp-link{
+  appearance:none;
+  border:none;
+  background:none;
+  padding:6px 0;
+  font:inherit;
+  font-size:12.5px;
+  color:var(--ink);
+  text-decoration:underline;
+  text-underline-offset:2px;
+  cursor:pointer;
+}
+.mp-link:hover{ text-decoration-thickness:2px; }
+.mp-link:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
