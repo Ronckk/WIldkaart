@@ -46,7 +46,7 @@
   if (themeToggleBtn) themeToggleBtn.addEventListener('click', function(){ setTimeout(syncTiles, 0); });
   if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncTiles);
 
-  var markersLayer = L.layerGroup().addTo(map);
+  var CL = WDK.clusterLayer(map);
   var markerIndex = {}; // plaatsnaam -> { marker, b }
   var mapWrap = document.querySelector('.map-wrap');
 
@@ -70,12 +70,11 @@
   function render(){
     var f = EX.get();
     var rows = WDK.applyFilter(DATA.all, 'wolf', f);
-    markersLayer.clearLayers();
     markerIndex = {};
     var maxCount = 1;
     rows.forEach(function(b){ if (b.t > maxCount) maxCount = b.t; });
     var latestRow = null;
-    rows.forEach(function(b){
+    var items = rows.map(function(b){
       var m = L.circleMarker([b.lat, b.lon], {
         radius: radius(b.t, maxCount),
         color: 'var(--map-surface)',
@@ -84,20 +83,11 @@
         fillOpacity: 0.85
       });
       m.bindPopup(popupHtml(b), { maxWidth:240 });
-      m.addTo(markersLayer);
       markerIndex[b.id] = { marker:m, b:b };
       if (b.ev.length && (!latestRow || b.ev[0].d > latestRow.ev[0].d)) latestRow = b;
+      return { id:b.id, lat:b.lat, lon:b.lon, w:b.t, rank:WDK.DOM_RANK[b.dom], color:COLORS[b.dom], marker:m };
     });
-    if (latestRow){
-      L.circleMarker([latestRow.lat, latestRow.lon], {
-        radius: radius(latestRow.t, maxCount),
-        className: 'pulse-halo',
-        color: COLORS[latestRow.dom],
-        weight: 2,
-        fill: false,
-        interactive: false
-      }).addTo(markersLayer);
-    }
+    CL.setItems(items, { halo: latestRow && latestRow.id }); // dicht bij elkaar (binnen 5 km): één cluster met het aantal meldingen
     var s = renderStats(rows);
     WDK.renderScopeNote(document.getElementById('statsNote'), { rows:LOADED.overig, key:'wolf', filter:f, where:'de Veluwe', attacks:true });
     EX.setHeatPoints(rows.map(function(b){ return { lat:b.lat, lon:b.lon, w:b.t }; }));
@@ -185,11 +175,7 @@
     searchInput.value = stripExact(placeById[id].n).base;
     searchInput.blur(); // verberg het mobiele toetsenbord zodat de kaart zichtbaar is
     if (!markerIndex[id]) EX.set({ types:null, van:null, tot:null }); // door het filter verborgen? dan het filter wissen
-    var entry = markerIndex[id];
-    if (entry){
-      map.flyTo(entry.marker.getLatLng(), Math.max(map.getZoom(), 13), { duration:0.6 });
-      entry.marker.openPopup();
-    }
+    if (markerIndex[id]) CL.openItem(id, Math.max(map.getZoom(), 13)); // zoomt zo nodig verder in, zodat het bolletje los van een cluster staat
     setTimeout(function(){
       var r = mapWrap.getBoundingClientRect();
       var visible = r.top >= 0 && r.bottom <= (window.innerHeight || document.documentElement.clientHeight);

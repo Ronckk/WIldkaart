@@ -94,6 +94,9 @@ kolom `Type` mag dat overschrijven. `Tijd`, `Regio` en `Plaats` mogen erbij als 
     (uit te zetten met `"required": false` onder `"verification"` in de config).
   - Wordt door het weghalen van veel vinkjes de site plotseling veel kleiner (minder dan de helft), dan weigert de
     beveiliging de sync; controleer dan of dat de bedoeling is en draai lokaal `--force`.
+- **Met jonkies:** staat er in `Dier` een keuze als `Zwijn met jonkies` (of `Ree met jonkies`), dan is de melding van het type
+  "Met jonkies gezien" en hoort hij bij die diersoort (Zwijn -> zwijnenpagina; andere dieren -> Overig, met alleen de diernaam).
+  Het werkt voor elke keuze waarin "jonk" voorkomt; de aanvalstabel blijft altijd een aanval.
 - **Diersoort:** `Dier` = Wolf of Zwijn gaat naar de wolven- of zwijnenpagina. **Elk ander dier** (Hert, Ree, Vos, ...) gaat naar de
   pagina Overig (`"catch_all": "andere"` in de config) en onthoudt zijn naam (`diersoort`), zodat de kaart en de popup laten
   zien om welk dier het gaat. Een nieuwe diernaam in de keuzelijst van SeaTable werkt dus meteen; een eigen pagina voor een dier
@@ -158,6 +161,17 @@ meekomt. Doe dus eerst de stappen hierboven, dan pas de site.
 
 Nieuwe inzendingen wachten op jouw vinkje in de kolom `Verificatie` (zie hierboven). Zonder JavaScript verwijst `melden.html`
 rechtstreeks naar de formulieren.
+
+## Clusteren op de kaart
+
+Op de homepage en de wolven-, zwijnen- en overig-pagina voegt `WDK.clusterLayer` (`assets/map-tools.js`) bolletjes die dicht bij
+elkaar liggen samen tot één cluster met het totale aantal meldingen. Klik je op een cluster, dan zoom je in en valt het uit elkaar;
+uitzoomen voegt ze weer samen. "Dicht bij elkaar" betekent: hoogstens **5 km** in werkelijkheid én hoogstens **60 pixels** op het
+scherm, en vanaf zoomniveau **16** staat elk bolletje los. De drie getallen staan in `CLUSTER` bovenin dat blok
+(`maxKm`, `maxPx`, `noClusterZoom`). Wil je dat bolletjes ook bij een landelijk beeld al eerder samengaan (nu gebeurt dat alleen
+binnen 5 km), verhoog dan `maxKm`. De kleur van een cluster is die van de belangrijkste melding erin (aanval, dan jonkies, dan zicht);
+op de homepage is een cluster met meerdere diersoorten grijs. Het zoeken van een plaats zoomt zo ver in dat het bolletje los staat en opent
+dan zijn popup. De rekenregel zelf is `WDK.clusterPoints(items, zoom)` en heeft geen kaart nodig.
 
 ## Menubalk en voettekst
 

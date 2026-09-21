@@ -138,17 +138,22 @@
     if (!entry) return;
     searchInput.value = stripExact(entry.n).base;
     searchInput.blur();
+    var cl = window.__nlCluster, mkey = entry.meldingKey;
     // verborgen door het filter (of een uitgezette soort)? dan het filter wissen zodat de melding zichtbaar wordt
-    if (entry.meldingKey && window.__nlExplorer && !(window.__meldingMarkers && window.__meldingMarkers[entry.meldingKey])){
+    if (mkey && window.__nlExplorer && cl && !cl.has(mkey)){
       window.__nlExplorer.set({ soort:null, types:null, van:null, tot:null });
     }
-    map.flyTo([entry.lat, entry.lon], entry.zoom, { duration:0.6 });
-    if (entry.meldingKey){
-      // pas bij het openen opzoeken: bij een ?plaats=-link bestaan de bolletjes op dit moment nog niet
-      setTimeout(function(){
-        var m = window.__meldingMarkers && window.__meldingMarkers[entry.meldingKey];
-        if (m) m.openPopup();
-      }, 650);
+    if (mkey && cl && cl.has(mkey)){
+      cl.openItem(mkey, entry.zoom); // zoomt zo nodig verder in, zodat de melding los van een cluster staat
+    } else {
+      map.flyTo([entry.lat, entry.lon], entry.zoom, { duration:0.6 });
+      if (mkey){
+        // bij een ?plaats=-link bestaan de bolletjes op dit moment nog niet (home-stats.js komt later): pas bij het openen opzoeken
+        setTimeout(function(){
+          var c = window.__nlCluster;
+          if (c && c.has(mkey)) c.openItem(mkey, entry.zoom);
+        }, 650);
+      }
     }
     setTimeout(function(){
       var r = mapWrap.getBoundingClientRect();

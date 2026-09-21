@@ -181,6 +181,16 @@ def norm_type(v, default):
     return 'overig'
 
 
+def with_young(v):
+    """Staat in de diernaam dat er jonkies bij waren ("Zwijn met jonkies", "Ree met jonkies")?"""
+    return 'jonk' in norm(as_text(v))
+
+
+def strip_young(name):
+    """"Ree met jonkies" -> "Ree": op de pagina Overig staat het dier zelf; dat er jonkies bij waren is het type van de melding."""
+    return re.sub(r'\s*\bmet\s+jonk\w*', '', name, flags=re.I).strip()
+
+
 def norm_species(v, default, allowed, catch_all=None):
     """Wolf en zwijn hebben een eigen pagina; elk ander dier (hert, ree, vos, ...) gaat naar `catch_all` (de pagina Overig)."""
     t = norm(as_text(v))
@@ -325,12 +335,14 @@ def read_table(sea_rows, tmeta, table_cfg, cfg, warn):
         if species is None:
             warn('Tabel "%s": onbekende diersoort "%s" bij %s - rij overgeslagen.' % (name, as_text(row.get(m['soort'])), d))
             continue
-        rec = {'species': species, 'place': place, 'd': d, 'tm': tm,
-               'ty': norm_type(row.get(m['type']) if m['type'] else None, default_type),
+        ty = norm_type(row.get(m['type']) if m['type'] else None, default_type)
+        if ty == 'zichtmelding' and m['soort'] and with_young(row.get(m['soort'])):
+            ty = 'jonkies'   # keuze "Zwijn met jonkies": een zichtmelding met jonkies, geen aparte diersoort
+        rec = {'species': species, 'place': place, 'd': d, 'tm': tm, 'ty': ty,
                'lat': lat, 'lon': lon, 'regio': norm(as_text(row.get(m['regio']))) if m['regio'] else ''}
         if species == cfg.get('catch_all'):
             # de pagina Overig toont meerdere diersoorten door elkaar, dus per melding onthouden we welk dier het was
-            dier_naam = as_text(row.get(m['soort']))
+            dier_naam = strip_young(as_text(row.get(m['soort'])))
             rec['diersoort'] = dier_naam[:1].upper() + dier_naam[1:]
         dieren = []
         for dcol, gcol in slots:

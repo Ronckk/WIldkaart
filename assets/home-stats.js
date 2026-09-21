@@ -9,7 +9,7 @@
   var SPECIES = WDK.loadAll().map(function(d){
     var sp = d.species;
     return { key:sp.key, label:sp.label, plural:sp.plural, mapName:sp.mapName, emoji:sp.emoji, color:sp.color, page:sp.page,
-      layer: L.layerGroup().addTo(map), rows: d.all, data: d };
+      rows: d.all, data: d };
   });
   if (!SPECIES.length) return;
 
@@ -54,19 +54,20 @@
     rows: SPECIES.reduce(function(all, s){ return all.concat(s.rows); }, [])
   });
   window.__nlExplorer = EX;
-  window.__meldingMarkers = {};
+  // bolletjes die dicht bij elkaar liggen (binnen 5 km) worden één cluster; hoort het cluster bij één soort, dan krijgt het die kleur
+  var CL = WDK.clusterLayer(map, { clusterColor: function(list){
+    var c = list[0].color;
+    return list.every(function(it){ return it.color === c; }) ? c : WDK.CLUSTER_MIXED_COLOR;
+  } });
+  window.__nlCluster = CL;
 
   // tekent de bolletjes opnieuw voor het huidige filter (en geeft de punten door aan de hitte-laag)
   function renderMap(){
     var f = EX.get();
     var visible = f.soort || SPECIES.map(function(s){ return s.key; });
-    var latest = null, total = 0, places = 0;
-    window.__meldingMarkers = {};
+    var latest = null, total = 0, places = 0, items = [];
     SPECIES.forEach(function(species){
       var on = visible.indexOf(species.key) > -1;
-      species.layer.clearLayers();
-      if (on && !map.hasLayer(species.layer)) map.addLayer(species.layer);
-      if (!on && map.hasLayer(species.layer)) map.removeLayer(species.layer);
       if (species.legendItem) species.legendItem.style.opacity = on ? '' : '.45'; // uitgezette soort dimmen in de legenda
       if (!on) return;
       var rows = WDK.applyFilter(species.rows, species.key, f);
@@ -81,22 +82,13 @@
           fillOpacity: 0.85
         });
         m.bindPopup(popupHtml(species, b), { maxWidth:240 });
-        m.addTo(species.layer);
-        window.__meldingMarkers[species.key + '::' + b.id] = m;
+        var id = species.key + '::' + b.id;
+        items.push({ id:id, lat:b.lat, lon:b.lon, w:b.t, rank:WDK.DOM_RANK[b.dom], color:species.color, marker:m });
         total += b.t; places++;
-        if (b.ev.length && (!latest || b.ev[0].d > latest.b.ev[0].d)) latest = { b:b, species:species, maxCount:maxCount };
+        if (b.ev.length && (!latest || b.ev[0].d > latest.b.ev[0].d)) latest = { b:b, id:id };
       });
     });
-    if (latest){
-      L.circleMarker([latest.b.lat, latest.b.lon], {
-        radius: radius(latest.b.t, latest.maxCount),
-        className: 'pulse-halo',
-        color: latest.species.color,
-        weight: 2,
-        fill: false,
-        interactive: false
-      }).addTo(latest.species.layer);
-    }
+    CL.setItems(items, { halo: latest && latest.id });
     EX.setSummary(total, places);
   }
   renderMap();
