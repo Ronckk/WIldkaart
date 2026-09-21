@@ -29,21 +29,10 @@ PAGES = {
     'overig.html':  {'active': 'overig',  'notes': ['<div>%s</div>' % PLACE_NOTE]},
     'over.html':    {'active': None,      'notes': []},
     '404.html':     {'active': None,      'notes': []},
+    'melden.html':  {'active': None,      'notes': []},
 }
 
 MENU = [('home', 'Home', './'), ('wolven', 'Wolven', 'wolven'), ('zwijnen', 'Zwijnen', 'zwijnen')]
-
-
-def form_urls():
-    """De formulieradressen komen uit assets/site.js (FORMS), zodat ze maar op één plek staan."""
-    js = (ROOT / 'assets' / 'site.js').read_text(encoding='utf-8')
-    out = {}
-    for key in ('zichtmelding', 'aanval'):
-        m = re.search(r"%s:\s*\{[^}]*url:'([^']+)'" % key, js)
-        if not m:
-            raise SystemExit('FORMS.%s niet gevonden in assets/site.js' % key)
-        out[key] = m.group(1)
-    return out
 
 
 def nav_html(active):
@@ -67,7 +56,6 @@ def nav_html(active):
 
 
 def footer_html(notes):
-    f = form_urls()
     ext = 'target="_blank" rel="noopener noreferrer"'
     notes_html = ''
     if notes:
@@ -90,8 +78,8 @@ def footer_html(notes):
       <nav class="footer-col" aria-label="Melden">
         <h2>Melden</h2>
         <ul>
-          <li><a href="%(zicht)s" %(ext)s>Meld een zichtmelding &#8599;</a></li>
-          <li><a href="%(aanval)s" %(ext)s>Meld een aanval op vee &#8599;</a></li>
+          <li><a href="melden?type=zichtmelding">Meld een zichtmelding</a></li>
+          <li><a href="melden?type=aanval">Meld een aanval op vee</a></li>
         </ul>
       </nav>
       <nav class="footer-col" aria-label="Over de site">
@@ -109,7 +97,7 @@ def footer_html(notes):
       <div>&copy; 2026 Wilde Dieren in Kaart &middot; Gebouwd door <a href="https://rlode.nl/" %(ext)s>rlode.nl</a></div>
       <div>Kaart: <a href="https://www.openstreetmap.org/copyright" %(ext)s>OpenStreetMap</a>-bijdragers, <a href="https://carto.com/attributions" %(ext)s>CARTO</a> &middot; Plaatsnamen: <a href="https://www.pdok.nl/" %(ext)s>PDOK</a></div>
     </div>
-  </div></footer>''' % {'zicht': f['zichtmelding'], 'aanval': f['aanval'], 'ext': ext, 'notes': notes_html}
+  </div></footer>''' % {'ext': ext, 'notes': notes_html}
 
 
 def block(name, inner):

@@ -86,13 +86,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main   # inclusief de commit van de sync-job
+          fetch-depth: 0   # volledige geschiedenis: build_sitemap.py leest daaruit de <lastmod> van elke pagina
 
       # alleen wat de website nodig heeft; tools/, tests, backups en de README blijven buiten de gepubliceerde site
       - name: Site-map samenstellen
         run: |
           mkdir _site
-          cp index.html wolven.html zwijnen.html overig.html over.html 404.html robots.txt sitemap.xml _site/
+          cp index.html wolven.html zwijnen.html overig.html over.html melden.html 404.html robots.txt _site/
           cp -r assets data _site/
+          python3 tools/build_sitemap.py --out _site/sitemap.xml
 
       - uses: actions/configure-pages@v5
 

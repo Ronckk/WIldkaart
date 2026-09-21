@@ -29,12 +29,16 @@
 
   // ---------------------------------------------------------------- meldformulieren (SeaTable)
   // De enige plek waar de formulieradressen staan; pagina's gebruiken WDK.renderReportCta() en WDK.FORMS.
+  // Bezoekers gaan eerst langs `page` (melden.html: locatie kiezen op de kaart of met GPS) en komen daarna in het SeaTable-formulier
+  // `url` met de coördinaten al ingevuld. SeaTable kan een geolocatie-kolom niet vooraf invullen, wel tekst en getallen, dus het
+  // formulier heeft twee losse getalkolommen; hun namen staan in PREFILL en moeten kloppen met `columns.lat/lon` in tools/seatable.config.json.
   var FORMS = {
-    zichtmelding: { label:'Meld een zichtmelding', url:'https://cloud.seatable.io/dtable/forms/ddd1720d-7add-4e83-a54e-a37ec8c4fafe/' },
-    aanval:       { label:'Meld een aanval op vee', url:'https://cloud.seatable.io/dtable/forms/b4e47b67-a310-4620-a61d-384bc23393cd/' }
+    zichtmelding: { label:'Meld een zichtmelding', page:'melden?type=zichtmelding', url:'https://cloud.seatable.io/dtable/forms/ddd1720d-7add-4e83-a54e-a37ec8c4fafe/' },
+    aanval:       { label:'Meld een aanval op vee', page:'melden?type=aanval',       url:'https://cloud.seatable.io/dtable/forms/b4e47b67-a310-4620-a61d-384bc23393cd/' }
   };
+  var PREFILL = { lat:'Latitude', lon:'Longitude' };
   function formLink(type, text){
-    return '<a href="' + FORMS[type].url + '" target="_blank" rel="noopener noreferrer">' + text + '</a>';
+    return '<a href="' + FORMS[type].page + '">' + text + '</a>';
   }
   var REPORT_NOTE = 'Elke melding wordt eerst gecontroleerd voordat hij op de kaart komt (<a href="over#controle">zo doen we dat</a>).';
   var DEFAULT_REPORT = { title:'Zelf iets gezien?', types:['zichtmelding', 'aanval'],
@@ -614,8 +618,8 @@
     var cfg = (o && o.species && SPECIES[o.species] && SPECIES[o.species].report) || DEFAULT_REPORT;
     el.innerHTML = '<h2 class="card-title">' + cfg.title + '</h2><p class="sub">' + cfg.text + '</p><div class="rc-actions">' +
       cfg.types.map(function(t, i){
-        return '<a class="rc-btn' + (i === 0 ? ' is-primary' : '') + '" href="' + FORMS[t].url + '" target="_blank" rel="noopener noreferrer" ' +
-          'aria-label="' + FORMS[t].label + ' (opent in een nieuw tabblad)">' + FORMS[t].label + '<span class="rc-arrow" aria-hidden="true">&#8599;</span></a>';
+        return '<a class="rc-btn' + (i === 0 ? ' is-primary' : '') + '" href="' + FORMS[t].page + '">' +
+          FORMS[t].label + '<span class="rc-arrow" aria-hidden="true">&#8594;</span></a>';
       }).join('') + '</div>';
   }
 
@@ -788,7 +792,7 @@
     events:events, cmpEvents:cmpEvents, recent:recent, recentLabel:recentLabel, stats:stats, periodLabel:periodLabel,
     FILTER_TYPES:FILTER_TYPES, emptyFilter:emptyFilter, isEmptyFilter:isEmptyFilter, parseFilter:parseFilter, filterToParams:filterToParams,
     applyFilter:applyFilter, monthList:monthList, typesPresent:typesPresent, recentCutoff:recentCutoff,
-    FORMS:FORMS, renderReportCta:renderReportCta,
+    FORMS:FORMS, PREFILL:PREFILL, renderReportCta:renderReportCta,
     renderScopeNote:renderScopeNote, forecast:forecast, renderForecast:renderForecast, renderFunFacts:renderFunFacts, renderLivestock:renderLivestock, renderSpeciesBars:renderSpeciesBars, renderMonthlyChart:renderMonthlyChart
   };
 })(window);

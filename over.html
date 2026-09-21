@@ -28,294 +28,12 @@
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preload" href="assets/fonts/ibm-plex-sans-variable-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/fraunces-variable-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
 <link rel="stylesheet" href="assets/map-tools.css">
 <link rel="stylesheet" href="assets/shell.css">
-<style>
-:root{
-    color-scheme: light;
-    --bg:#f5f5f3;
-    --surface:#ffffff;
-    --map-surface:#f7f7f5;
-    --ink:#131313;
-    --ink-2:#454545;
-    --muted:#87887f;
-    --border:rgba(17,17,17,.13);
-    --border-strong:rgba(17,17,17,.24);
-    --accent:#141414;
-    --accent-ink:#f5f5f3;
-    --grid:#e4e4e1;
-    --land:#ececea;
-    --water:#dde7ea;
-    --tab-bg:#e7e7e4;
-    --s-zicht:#2a78d6;
-    --s-aanval:#eb6834;
-    --s-overig:#1baf7a;
-    --pal-1:#2a78d6;
-    --pal-2:#eb6834;
-    --pal-3:#1baf7a;
-    --pal-4:#eda100;
-    --pal-5:#e87ba4;
-    --pal-6:#008300;
-    --pal-7:#4a3aa7;
-    --species-zwijn:#9c5a26;
-    --shadow: 0 1px 2px rgba(21,32,24,.06), 0 8px 24px -12px rgba(21,32,24,.18);
-  }
-@media (prefers-color-scheme: dark){
-:root:not([data-theme="light"]){
-      color-scheme: dark;
-      --bg:#121212;
-      --surface:#1c1c1c;
-      --map-surface:#161616;
-      --ink:#f2f2f0;
-      --ink-2:#bdbdbd;
-      --muted:#8a8a86;
-      --border:rgba(255,255,255,.13);
-      --border-strong:rgba(255,255,255,.24);
-      --accent:#e8e8e8;
-      --accent-ink:#121212;
-      --grid:#2a2a2a;
-      --land:#242424;
-      --water:#132229;
-      --tab-bg:#232323;
-      --s-zicht:#3987e5;
-      --s-aanval:#d95926;
-      --s-overig:#199e70;
-      --pal-1:#3987e5;
-      --pal-2:#d95926;
-      --pal-3:#199e70;
-      --pal-4:#c98500;
-      --pal-5:#d55181;
-      --pal-6:#008300;
-      --pal-7:#9085e9;
-    --species-zwijn:#c07f3f;
-      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px -12px rgba(0,0,0,.55);
-    }
-}
-:root[data-theme="dark"]{
-    color-scheme: dark;
-    --bg:#121212;
-    --surface:#1c1c1c;
-    --map-surface:#161616;
-    --ink:#f2f2f0;
-    --ink-2:#bdbdbd;
-    --muted:#8a8a86;
-    --border:rgba(255,255,255,.13);
-    --border-strong:rgba(255,255,255,.24);
-    --accent:#e8e8e8;
-    --accent-ink:#121212;
-    --grid:#2a2a2a;
-    --land:#242424;
-    --water:#132229;
-    --tab-bg:#232323;
-    --s-zicht:#3987e5;
-    --s-aanval:#d95926;
-    --s-overig:#199e70;
-    --pal-1:#3987e5;
-    --pal-2:#d95926;
-    --pal-3:#199e70;
-    --pal-4:#c98500;
-    --pal-5:#d55181;
-    --pal-6:#008300;
-    --pal-7:#9085e9;
-    --species-zwijn:#c07f3f;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px -12px rgba(0,0,0,.55);
-  }
-*{box-sizing:border-box;}
-body{
-    background:var(--bg);
-    color:var(--ink);
-    font-family:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  }
-.page{
-    max-width:980px;
-    margin:0 auto;
-    padding-inline:20px;
-    padding-block: 28px 40px;
-    display:flex;
-    flex-direction:column;
-    gap:22px;
-  }
-.navbar{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-bottom:-6px;
-  }
-.nav-links{
-    flex:1;
-    display:flex;
-    justify-content:center;
-    gap:4px;
-    flex-wrap:wrap;
-  }
-.nav-link{
-    appearance:none;
-    border:none;
-    background:transparent;
-    font:inherit;
-    font-family:"IBM Plex Sans", sans-serif;
-    font-weight:600;
-    font-size:13.5px;
-    color:var(--ink-2);
-    padding:8px 14px;
-    border-radius:9px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    gap:6px;
-    white-space:nowrap;
-    text-decoration:none;
-  }
-.nav-link.active{ background:var(--tab-bg); color:var(--ink); }
-.nav-link:not(.is-soon):not(.active):hover{ background:var(--tab-bg); }
-.nav-link.is-soon{ color:var(--muted); cursor:default; opacity:.75; }
-.nav-link .soon-tag{
-    font-family:"IBM Plex Mono", monospace;
-    font-size:9px;
-    font-weight:600;
-    text-transform:uppercase;
-    letter-spacing:.04em;
-    background:var(--grid);
-    color:var(--muted);
-    padding:2px 6px;
-    border-radius:99px;
-  }
-.theme-toggle{
-    appearance:none;
-    border:1px solid var(--border);
-    background:var(--surface);
-    color:var(--ink);
-    width:36px;
-    height:36px;
-    border-radius:10px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:16px;
-    flex:none;
-  }
-.theme-toggle:hover{ background:var(--tab-bg); }
-.theme-toggle:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-.theme-toggle .icon-moon{ display:none; }
-@media (prefers-color-scheme: dark){
-:root:not([data-theme="light"]) .theme-toggle .icon-moon{ display:inline; }
-:root:not([data-theme="light"]) .theme-toggle .icon-sun{ display:none; }
-}
-:root[data-theme="dark"] .theme-toggle .icon-moon{ display:inline; }
-:root[data-theme="dark"] .theme-toggle .icon-sun{ display:none; }
-@media (max-width:520px){
-.nav-link{ padding:7px 9px; font-size:12.5px; }
-.nav-link .soon-tag{ display:none; }
-.nav-links{
-      flex-wrap:nowrap;
-      justify-content:flex-start;
-      overflow-x:auto;
-      -webkit-overflow-scrolling:touch;
-      scrollbar-width:none;
-      min-width:0;
-    }
-.nav-links::-webkit-scrollbar{ display:none; }
-}
-.hero{ display:flex; flex-direction:column; gap:8px; }
-.eyebrow{
-    font-family:"IBM Plex Mono", monospace;
-    font-size:12px;
-    letter-spacing:.09em;
-    text-transform:uppercase;
-    color:var(--accent);
-    margin:0;
-  }
-h1{
-    font-family:"Fraunces", Georgia, serif;
-    font-weight:600;
-    font-size:clamp(28px, 5vw, 42px);
-    line-height:1.08;
-    margin:0;
-    text-wrap:balance;
-    letter-spacing:-.01em;
-  }
-.sub{
-    margin:0;
-    max-width:62ch;
-    color:var(--ink-2);
-    font-size:15px;
-    line-height:1.55;
-  }
-.sub b{ color:var(--ink); font-weight:600; }
-.legend-group{ display:flex; align-items:center; gap:8px; }
-.swatch{ width:10px; height:10px; border-radius:50%; display:inline-block; flex:none; }
-.animal-card{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:16px;
-    box-shadow:var(--shadow);
-    padding:20px 22px;
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-  }
-.card-title{
-    font-family:"Fraunces", Georgia, serif;
-    font-weight:600;
-    font-size:19px;
-    margin:0;
-    letter-spacing:-.005em;
-  }
-.card-foot{
-    font-size:11.5px;
-    color:var(--muted);
-    line-height:1.6;
-    border-top:1px solid var(--border);
-    padding-top:12px;
-    margin-top:2px;
-  }
-.card-foot a{ color:var(--ink-2); }
-.notice{
-    font-size:12.5px;
-    color:var(--ink-2);
-    line-height:1.55;
-    background:var(--map-surface);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:10px 12px;
-  }
-.sub-h{
-    font-family:"IBM Plex Sans", sans-serif;
-    font-weight:600;
-    font-size:13.5px;
-    color:var(--ink);
-    margin:2px 0 0;
-  }
-footer{
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-    font-size:12px;
-    color:var(--muted);
-    line-height:1.6;
-    border-top:1px solid var(--border);
-    padding-top:16px;
-  }
-footer a{ color:var(--ink-2); }
-@media (max-width:640px){
-h1{ font-size:26px; }
-}
-
-  .prose p{ margin:0; max-width:68ch; font-size:15px; line-height:1.65; color:var(--ink-2); }
-  .prose p b, .prose li b{ color:var(--ink); font-weight:600; }
-  .prose ul{ margin:0; padding-left:20px; max-width:68ch; display:flex; flex-direction:column; gap:8px; font-size:15px; line-height:1.6; color:var(--ink-2); }
-  .prose a, .card-foot a, footer a{ color:var(--ink); text-underline-offset:2px; }
-  .key{ display:flex; flex-direction:column; gap:8px; margin:0; padding:0; list-style:none; }
-  .key li{ display:flex; align-items:center; gap:10px; font-size:14.5px; color:var(--ink-2); }
-  .key .swatch{ width:12px; height:12px; }
-  .toc{ display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13.5px; }
-  .toc a{ color:var(--ink-2); }
-
-</style>
+<link rel="stylesheet" href="assets/text.css">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "AboutPage", "name": "Over Wilde Dieren in Kaart", "url": "https://wildkaart.rlode.nl/over", "inLanguage": "nl", "isPartOf": {"@type": "WebSite", "name": "Wilde Dieren in Kaart", "url": "https://wildkaart.rlode.nl/"}, "breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://wildkaart.rlode.nl/"}, {"@type": "ListItem", "position": 2, "name": "Over deze site", "item": "https://wildkaart.rlode.nl/over"}]}}</script>
 </head>
 <body>
@@ -402,7 +120,8 @@ h1{ font-size:26px; }
     <ul>
       <li>Bij het melden vragen we <b>geen naam en geen e-mailadres</b>, alleen wat je hebt gezien, wanneer en waar. De formulieren draaien bij SeaTable.</li>
       <li>Deze website plaatst zelf <b>geen cookies</b> en volgt je niet. Alleen je keuze voor licht of donker wordt in je eigen browser onthouden.</li>
-      <li>Voor de kaartachtergrond en de lettertypes laadt je browser bestanden van externe partijen (CARTO/OpenStreetMap, Google Fonts en unpkg). Die kunnen daarbij je IP-adres zien.</li>
+      <li>Voor de kaartachtergrond laadt je browser kaartdelen van CARTO/OpenStreetMap. Die kunnen daarbij je IP-adres zien. De lettertypes en de kaartsoftware staan op deze site zelf.</li>
+      <li>Kies je op de pagina <a href="melden">Meld een waarneming</a> een plek, dan wordt die alleen in het adres van het formulier gezet, zodat je hem daar niet zelf hoeft in te vullen. Je locatie (GPS) vragen we pas op als je op &ldquo;Gebruik mijn locatie&rdquo; tikt. Voor de plaatsnaam bij de pin vraagt je browser <a href="https://www.pdok.nl/" target="_blank" rel="noopener noreferrer">PDOK</a> (Kadaster) om de dichtstbijzijnde woonplaats; PDOK ziet daarbij de gekozen co&ouml;rdinaten en je IP-adres.</li>
     </ul>
   </section>
 
@@ -431,8 +150,8 @@ h1{ font-size:26px; }
       <nav class="footer-col" aria-label="Melden">
         <h2>Melden</h2>
         <ul>
-          <li><a href="https://cloud.seatable.io/dtable/forms/ddd1720d-7add-4e83-a54e-a37ec8c4fafe/" target="_blank" rel="noopener noreferrer">Meld een zichtmelding &#8599;</a></li>
-          <li><a href="https://cloud.seatable.io/dtable/forms/b4e47b67-a310-4620-a61d-384bc23393cd/" target="_blank" rel="noopener noreferrer">Meld een aanval op vee &#8599;</a></li>
+          <li><a href="melden?type=zichtmelding">Meld een zichtmelding</a></li>
+          <li><a href="melden?type=aanval">Meld een aanval op vee</a></li>
         </ul>
       </nav>
       <nav class="footer-col" aria-label="Over de site">
@@ -454,27 +173,6 @@ h1{ font-size:26px; }
 <!-- /shell:footer -->
 <script src="assets/site.js"></script>
 <script>if (window.WDK) WDK.renderReportCta(document.getElementById('reportCta'));</script>
-<script>
-(function(){
-  var THEME_KEY = 'wolvenkaart-theme';
-  var themeToggle = document.getElementById('themeToggle');
-  function currentTheme(){
-    var explicit = document.documentElement.getAttribute('data-theme');
-    if (explicit === 'dark' || explicit === 'light') return explicit;
-    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-  }
-  function applyTheme(t){
-    document.documentElement.setAttribute('data-theme', t);
-    try { localStorage.setItem(THEME_KEY, t); } catch(e){}
-    themeToggle.setAttribute('aria-label', t === 'dark' ? 'Zet lichte modus aan' : 'Zet donkere modus aan');
-  }
-  if (themeToggle){
-    themeToggle.setAttribute('aria-label', currentTheme() === 'dark' ? 'Zet lichte modus aan' : 'Zet donkere modus aan');
-    themeToggle.addEventListener('click', function(){
-      applyTheme(currentTheme() === 'dark' ? 'light' : 'dark');
-    });
-  }
-})();
-</script>
+<script src="assets/theme.js"></script>
 </body>
 </html>

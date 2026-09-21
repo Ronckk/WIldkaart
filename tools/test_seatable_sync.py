@@ -463,6 +463,39 @@ class SyncTest(unittest.TestCase):
         self.assertNotIn('diersoort', [k for b in wolf for e in b['ev'] for k in e])     # alleen op de Overig-pagina
 
 
+    # ------------------------------------------------------------ coördinaten uit de kaartpagina (vooraf ingevulde tekstkolommen)
+    def test_coord_float(self):
+        f = sync.coord_float
+        self.assertEqual(f('52.2913'), 52.2913)
+        self.assertEqual(f('52,2913'), 52.2913)                # komma als decimaalteken
+        self.assertEqual(f(' 5.7189° '), 5.7189)               # graden-teken
+        self.assertEqual(f('52.2913 N'), 52.2913)
+        self.assertEqual(f('5.7189 E'), 5.7189)
+        self.assertEqual(f(5.7189), 5.7189)                    # een getalkolom
+        self.assertIsNone(f(''))
+        self.assertIsNone(f(None))
+        self.assertIsNone(f('ergens bij Ermelo'))
+
+    def test_form_prefilled_lat_lon_columns_are_read_next_to_the_old_location_column(self):
+        """De kaartpagina vult de getalkolommen Latitude/Longitude in. Oude rijen met een geolocatie-kolom blijven werken."""
+        prefill = re.findall(r"PREFILL = \{ lat:'([^']+)', lon:'([^']+)' \}", (ROOT / 'assets' / 'site.js').read_text(encoding='utf-8'))[0]
+        cols = [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), (prefill[0], 'number'), (prefill[1], 'number')]
+        Mock.tables = {
+            'Zichtmeldingen': {'columns': cols, 'rows': [
+                {'Dier': 'Wolf', 'Datum': '2026-09-20', prefill[0]: 52.2913, prefill[1]: 5.7189},                        # nieuw: kaartpagina
+                {'Dier': 'Wolf', 'Datum': '2026-09-19', prefill[0]: 52.3010, prefill[1]: 5.7300},                                      # tweede punt
+                {'Dier': 'Wolf', 'Datum': '2026-09-18', 'Locatie': {'lat': 52.3100, 'lng': 5.7400}},                          # oud: alleen geolocatie
+                {'Dier': 'Wolf', 'Datum': '2026-09-17', prefill[0]: 5.7000, prefill[1]: 52.2000},                                      # omgewisseld
+            ]},
+            'Aanval': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation')], 'rows': []},
+        }
+        self.verified()
+        sync.pdok_reverse = lambda lat, lon, d: {'name': 'Ermelo', 'lat': 52.288, 'lon': 5.666}
+        self.assertEqual(self.run_sync('--force'), 0)
+        _, wolf = self.places('wolven-data.js')
+        got = sorted((b['lat'], b['lon'], b['ev'][0]['d']) for b in wolf)
+        self.assertEqual(got, [(52.2, 5.7, '2026-09-17'), (52.2913, 5.7189, '2026-09-20'), (52.301, 5.73, '2026-09-19'), (52.31, 5.74, '2026-09-18')])
+
     # ------------------------------------------------------------ omgewisselde coördinaten en mislukte opzoekingen
     def test_fix_coords(self):
         box = [49.0, 55.0, 2.0, 9.0]

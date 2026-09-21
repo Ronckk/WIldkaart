@@ -4,23 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>(function(){try{var t=localStorage.getItem('wolvenkaart-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
-<title>Wilde Dieren in Kaart | Wolven- en zwijnenmeldingen</title>
-<meta name="description" content="Gecontroleerde meldingen van wolven en zwijnen op de kaart: zichtmeldingen en aanvallen op vee, recente meldingen en een vooruitblik. Meld zelf een waarneming.">
+<title>Meld een waarneming | Wilde Dieren in Kaart</title>
+<meta name="description" content="Zag je een wolf, zwijn of ander wild dier, of is er vee aangevallen? Kies de plek op de kaart of met GPS en geef het door.">
 <meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="canonical" href="https://wildkaart.rlode.nl/">
-<meta property="og:url" content="https://wildkaart.rlode.nl/">
+<link rel="canonical" href="https://wildkaart.rlode.nl/melden">
+<meta property="og:url" content="https://wildkaart.rlode.nl/melden">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Wilde Dieren in Kaart">
-<meta property="og:title" content="Wilde Dieren in Kaart | Wolven- en zwijnenmeldingen">
-<meta property="og:description" content="Gecontroleerde meldingen van wolven en zwijnen op de kaart: zichtmeldingen en aanvallen op vee, recente meldingen en een vooruitblik. Meld zelf een waarneming.">
+<meta property="og:title" content="Meld een waarneming | Wilde Dieren in Kaart">
+<meta property="og:description" content="Zag je een wolf, zwijn of ander wild dier, of is er vee aangevallen? Kies de plek op de kaart of met GPS en geef het door.">
 <meta property="og:image" content="https://wildkaart.rlode.nl/assets/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Wilde Dieren in Kaart: kaart met meldingen van wolven en zwijnen">
 <meta property="og:locale" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Wilde Dieren in Kaart | Wolven- en zwijnenmeldingen">
-<meta name="twitter:description" content="Gecontroleerde meldingen van wolven en zwijnen op de kaart: zichtmeldingen en aanvallen op vee, recente meldingen en een vooruitblik. Meld zelf een waarneming.">
+<meta name="twitter:title" content="Meld een waarneming | Wilde Dieren in Kaart">
+<meta name="twitter:description" content="Zag je een wolf, zwijn of ander wild dier, of is er vee aangevallen? Kies de plek op de kaart of met GPS en geef het door.">
 <meta name="twitter:image" content="https://wildkaart.rlode.nl/assets/og-image.png">
 <meta name="theme-color" content="#f5f5f3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
@@ -28,7 +28,7 @@
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<script type="application/ld+json">{"@type": "WebSite", "name": "Wilde Dieren in Kaart", "url": "https://wildkaart.rlode.nl/", "inLanguage": "nl", "@context": "https://schema.org", "description": "Kaart met gecontroleerde meldingen van wolven en zwijnen in Nederland."}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Meld een waarneming", "url": "https://wildkaart.rlode.nl/melden", "inLanguage": "nl", "isPartOf": {"@type": "WebSite", "name": "Wilde Dieren in Kaart", "url": "https://wildkaart.rlode.nl/"}, "breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://wildkaart.rlode.nl/"}, {"@type": "ListItem", "position": 2, "name": "Meld een waarneming", "item": "https://wildkaart.rlode.nl/melden"}]}}</script>
 <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin>
 <link rel="preload" href="assets/fonts/ibm-plex-sans-variable-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/fraunces-variable-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -36,15 +36,15 @@
 <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="assets/map-tools.css">
 <link rel="stylesheet" href="assets/shell.css">
-<link rel="stylesheet" href="assets/home.css">
-
+<link rel="stylesheet" href="assets/species.css">
+<link rel="stylesheet" href="assets/melden.css">
 </head>
 <body>
 <!-- shell:nav -->
 <header class="site-header"><div class="site-header-inner">
   <nav class="navbar" aria-label="Hoofdmenu">
     <div class="nav-links">
-      <button type="button" class="nav-link active" aria-current="page">Home</button>
+      <a href="./" class="nav-link">Home</a>
       <a href="wolven" class="nav-link">Wolven</a>
       <a href="zwijnen" class="nav-link">Zwijnen</a>
       <button type="button" class="nav-link is-soon" disabled title="Binnenkort beschikbaar &mdash; we verzamelen nog data">Herten <span class="soon-tag">binnenkort</span></button>
@@ -58,56 +58,55 @@
 <!-- /shell:nav -->
 <div class="page">
   <header class="hero">
-    <p class="eyebrow">Wilde Dieren in Kaart</p>
-    <h1>Wilde dieren in Nederland, in kaart gebracht</h1>
-    <p class="sub">Waarnemingen en incidenten met wilde dieren in Nederland. Hieronder de meest recente meldingen, over alle bijgehouden diersoorten heen.</p>
+    <p class="eyebrow">Meldingen van bezoekers &middot; Nederland</p>
+    <h1>Meld een waarneming</h1>
+    <p class="sub">Kies eerst op de kaart waar je het dier zag. Daarna vul je in het formulier alleen nog het dier en de datum in; de plek staat er dan al in. Elke melding wordt gecontroleerd voordat hij op de kaart komt (<a href="over#controle">zo doen we dat</a>).</p>
   </header>
-  <noscript><div class="notice">Voor de kaart en de cijfers op deze pagina is JavaScript nodig. Schakel JavaScript in, of gebruik een andere browser.</div></noscript>
+  <noscript><div class="notice">Voor de kaart op deze pagina is JavaScript nodig. Zonder JavaScript kun je de plek zelf invullen in het formulier:
+    <a href="https://cloud.seatable.io/dtable/forms/ddd1720d-7add-4e83-a54e-a37ec8c4fafe/" rel="noopener noreferrer">zichtmelding</a> of
+    <a href="https://cloud.seatable.io/dtable/forms/b4e47b67-a310-4620-a61d-384bc23393cd/" rel="noopener noreferrer">aanval op vee</a>.</div></noscript>
 
-  <section class="animal-card" id="reportCta"></section>
-
-  <section class="animal-card">
-    <h2 class="card-title">Net binnen gekomen meldingen</h2>
-    <p class="sub" id="lastUpdateNote">Meldingen laden&hellip;</p>
-    <div class="report-table-wrap">
-      <table class="report-table">
-        <thead><tr><th>Plaats</th><th>Datum</th><th>Dier</th><th>Type</th></tr></thead>
-        <tbody id="recentReportsBody">
-        <tr><td colspan="4">Meldingen laden&hellip;</td></tr>
-        </tbody>
-      </table>
+  <section class="animal-card" aria-labelledby="stap1">
+    <h2 class="card-title" id="stap1">1. Wat wil je melden?</h2>
+    <div class="tabs" role="radiogroup" aria-labelledby="stap1" id="typeTabs">
+      <button type="button" class="tab" role="radio" aria-checked="false" data-type="zichtmelding">Ik zag een dier</button>
+      <button type="button" class="tab" role="radio" aria-checked="false" data-type="aanval">Vee is aangevallen</button>
     </div>
   </section>
 
-  <section class="animal-card">
-    <h2 class="card-title">Landelijke kaart</h2>
-    <div class="map-search">
-      <input type="text" id="nlPlaceSearch" class="search-input" placeholder="Zoek een provincie of plaats&hellip;" autocomplete="off" aria-label="Zoek een provincie of plaats op de landelijke kaart">
-      <div class="search-results" id="nlSearchResults" hidden></div>
-    </div>
-    <div id="explorer"></div>
-    <div class="map-wrap">
-      <div id="nlMap" role="img" aria-label="Kaart van Nederland met wolven- en zwijnenmeldingen"></div>
-      <div class="zoom-controls">
-        <button type="button" id="nlZoomIn" aria-label="Inzoomen">+</button>
-        <button type="button" id="nlZoomOut" aria-label="Uitzoomen">&minus;</button>
-        <button type="button" id="nlZoomReset" aria-label="Kaart resetten" style="font-size:12px;">&#8634;</button>
+  <section class="map-card" aria-labelledby="stap2">
+    <h2 class="card-title mp-title" id="stap2">2. Waar was het?</h2>
+    <p class="sub mp-lead">Tik op de kaart op de plek waar je het dier zag, of gebruik je huidige locatie. Je kunt de pin daarna verslepen.</p>
+    <div class="mp-tools">
+      <button type="button" class="rc-btn" id="locateBtn"><span aria-hidden="true">&#128205;</span> <span id="locateLabel">Gebruik mijn locatie</span></button>
+      <div class="map-search">
+        <input type="text" id="placeSearch" class="search-input" placeholder="Zoek een plaats of straat&hellip;" autocomplete="off" aria-label="Zoek een plaats of straat om de kaart te verplaatsen">
+        <div class="search-results" id="searchResults" hidden></div>
       </div>
     </div>
-    <div class="map-foot">
-      <div class="legend" id="mapLegend"></div>
+    <div class="map-wrap">
+      <div id="map" role="region" aria-label="Kaart: tik op de plek van je waarneming"></div>
+      <div class="zoom-controls">
+        <button type="button" id="zoomIn" aria-label="Inzoomen">+</button>
+        <button type="button" id="zoomOut" aria-label="Uitzoomen">&minus;</button>
+      </div>
     </div>
-    <div class="card-foot">Meldingen komen uit dezelfde bronnen als de wolven- en zwijnenkaart. Klik op een stip voor details.</div>
+    <div class="map-foot mp-foot">
+      <p class="mp-picked" id="picked" role="status" aria-live="polite">Nog geen plek gekozen.</p>
+      <button type="button" class="mp-link" id="centerBtn">Pin in het midden van de kaart zetten</button>
+    </div>
   </section>
 
-  <section class="animal-card">
-    <h2 class="card-title">Meldingen per maand</h2>
-    <div class="legend" id="chartLegend"></div>
-    <div class="chart-wrap" id="monthlyChart" role="img" aria-label="Gestapelde staafdiagram van meldingen per maand, wolf en zwijn, heel Nederland"></div>
+  <section class="animal-card" aria-labelledby="stap3">
+    <h2 class="card-title" id="stap3">3. Naar het formulier</h2>
+    <p class="sub" id="goHint">Kies eerst een plek op de kaart.</p>
+    <div class="rc-actions">
+      <a class="rc-btn is-primary is-disabled" id="goBtn" aria-disabled="true">Verder naar het formulier<span class="rc-arrow" aria-hidden="true">&#8594;</span></a>
+    </div>
+    <p class="card-foot">Liever zonder kaart? <a id="plainLink" href="#" rel="noopener noreferrer">Open het formulier en vul de plek zelf in</a>.
+      Je locatie wordt alleen gebruikt om het formulier vooraf in te vullen; de plaatsnaam zoeken we op bij <a href="https://www.pdok.nl/" target="_blank" rel="noopener noreferrer">PDOK</a>.
+      Meer over wat we bewaren staat bij <a href="over#privacy">privacy</a>.</p>
   </section>
-
-  <section class="animal-card" id="forecastCard"></section>
-
 </div>
 <!-- shell:footer -->
 <footer class="site-footer"><div class="site-footer-inner">
@@ -150,16 +149,9 @@
   </div></footer>
 <!-- /shell:footer -->
 
-<script src="data/wolven-data.js?v=deee5ef604"></script>
-<script src="data/zwijnen-data.js?v=475d4fcb86"></script>
-<script src="data/overig-data.js?v=67fe578d2a"></script>
 <script src="assets/site.js"></script>
 <script src="assets/vendor/leaflet/leaflet.js"></script>
-<script src="assets/map-tools.js"></script>
-<script src="assets/home-map.js"></script>
-<script src="assets/home-stats.js"></script>
 <script src="assets/theme.js"></script>
-
-<script>if (window.WDK) WDK.renderReportCta(document.getElementById('reportCta'));</script>
+<script src="assets/melden.js"></script>
 </body>
 </html>
