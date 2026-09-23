@@ -1,1 +1,1 @@
-window.ZWIJNEN_DATA = {"updatedAt": "2026-09-21T22:00", "veluwe": {"all": [{"n": "Elspeet", "lat": 52.319815, "lon": 5.755297, "ev": [{"d": "2026-09-06", "ty": "jonkies", "tm": "20:39"}]}]}, "overig": []};
+window.ZWIJNEN_DATA = {"updatedAt": "2026-09-23T13:05", "veluwe": {"all": [{"n": "Elspeet", "lat": 52.319815, "lon": 5.755297, "g": "Nunspeet", "ev": [{"d": "2026-09-06", "ty": "jonkies", "tm": "20:39"}]}]}, "overig": []};
