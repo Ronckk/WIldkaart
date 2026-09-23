@@ -175,7 +175,7 @@ def norm_type(v, default):
         return 'aanval'
     if 'jonk' in t:
         return 'jonkies'
-    if 'aanrij' in t:
+    if 'aanrij' in t or 'aangereden' in t:
         return 'aanrijding'
     if 'dood' in t:
         return 'dood'

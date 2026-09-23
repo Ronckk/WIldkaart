@@ -211,7 +211,9 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(sync.norm_type('Aanval op vee', 'zichtmelding'), 'aanval')
         self.assertEqual(sync.norm_type('Met jonkies gezien', 'zichtmelding'), 'jonkies')
         self.assertEqual(sync.norm_type('Aanrijding', 'zichtmelding'), 'aanrijding')
+        self.assertEqual(sync.norm_type('Aangereden', 'zichtmelding'), 'aanrijding')          # de echte SeaTable-optie (kolom "Gebeurtenis")
         self.assertEqual(sync.norm_type('Dood aangetroffen', 'zichtmelding'), 'dood')
+        self.assertEqual(sync.norm_type('Dood', 'zichtmelding'), 'dood')                      # de echte SeaTable-optie
         self.assertEqual(sync.norm_type('', 'aanval'), 'aanval')
         self.assertEqual(sync.norm_species('Wolven', 'wolf', {'wolf', 'zwijn'}), 'wolf')
         self.assertEqual(sync.norm_species('Wild zwijn', 'wolf', {'wolf', 'zwijn'}), 'zwijn')
@@ -557,15 +559,17 @@ class SyncTest(unittest.TestCase):
         _, other = self.places('overig-data.js')
         self.assertEqual([(e['diersoort'], e['ty']) for b in other for e in b['ev']], [('Ree', 'jonkies')])   # de naam zonder "met jonkies"
 
-    # ------------------------------------------------------------ kolom "Gebeurtenis" (aanrijding / dood aangetroffen)
+    # ------------------------------------------------------------ kolom "Gebeurtenis" (aangereden / dood)
+    # De kolom in SeaTable is een single-select met maar twee opties, "Aangereden" en "Dood" (geen "Zichtmelding": een
+    # gewone zichtmelding laat het veld leeg).
     def test_gebeurtenis_column_is_read_as_the_type(self):
         cols = [('Dier', 'single-select'), ('Datum', 'date'), ('Gebeurtenis', 'single-select'),
                 ('Latitude', 'number'), ('Longitude', 'number')]
         Mock.tables = {
             'Zichtmeldingen': {'columns': cols, 'rows': [
-                {'Dier': 'Wolf', 'Datum': '2026-09-20', 'Gebeurtenis': 'Zichtmelding', 'Latitude': 52.30, 'Longitude': 5.70},
-                {'Dier': 'Wolf', 'Datum': '2026-09-19', 'Gebeurtenis': 'Aanrijding', 'Latitude': 52.31, 'Longitude': 5.71},
-                {'Dier': 'Wolf', 'Datum': '2026-09-18', 'Gebeurtenis': 'Dood aangetroffen', 'Latitude': 52.32, 'Longitude': 5.72},
+                {'Dier': 'Wolf', 'Datum': '2026-09-20', 'Gebeurtenis': None, 'Latitude': 52.30, 'Longitude': 5.70},
+                {'Dier': 'Wolf', 'Datum': '2026-09-19', 'Gebeurtenis': 'Aangereden', 'Latitude': 52.31, 'Longitude': 5.71},
+                {'Dier': 'Wolf', 'Datum': '2026-09-18', 'Gebeurtenis': 'Dood', 'Latitude': 52.32, 'Longitude': 5.72},
             ]},
             'Aanval': {'columns': cols, 'rows': []},
         }
