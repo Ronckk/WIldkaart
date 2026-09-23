@@ -1,5 +1,12 @@
 /* Filterbalk, tijdschuif en hitte-laag (assets/map-tools.js) en de knoppen naar de meldformulieren (WDK.renderReportCta).
    Gebruikt de kleurvariabelen van de pagina's. */
+/* #explorer is leeg tot WDK.mountExplorer 'm vult; zonder gereserveerde hoogte springt de kaart eronder omlaag zodra dat
+   gebeurt (een layout shift). De hoogtes hieronder zijn gemeten (dichtgeklapt op mobiel, open op desktop; de homepage heeft
+   een extra rij door het soortfilter en overschrijft dit in assets/home.css). */
+#explorer{ min-height:208px; }
+@media (max-width:640px){
+  #explorer{ min-height:44px; }
+}
 .wdk-ex{
   display:flex;
   flex-direction:column;

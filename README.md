@@ -224,8 +224,15 @@ plaatsnamen) staan per pagina in `PAGES` in het script.
   Laat het staan en ongewijzigd; de publicatiestap kopieert het mee en een test bewaakt dat.
 - **Eenmalig na de eerste publicatie:** meld `https://wildkaart.rlode.nl/sitemap.xml` aan in Google Search Console (en Bing
   Webmaster Tools), en controleer daar of de pagina's worden geïndexeerd.
-- Beperking: de meldingen, cijfers en kaart worden met JavaScript getekend. Google voert dat uit, maar de introteksten en de
-  Over-pagina zijn gewoon HTML en dus altijd leesbaar.
+- De meldingen, cijfers en kaart worden met JavaScript getekend. Google voert dat uit, maar een crawler die dat niet doet (of
+  Google's eerste, snelle crawl-ronde) zag tot voor kort alleen een lege sjabloonpagina. Daarom zet elke sync (en `--stamp`)
+  ook de echte cijfers, de tegels ("17 Meldingen", "10 Zichtmeldingen", ...) en de tabel "Net binnen gekomen meldingen" (op de
+  homepage) al in de HTML zelf, uit `data/*.js` zoals dat op schijf staat — zie `render_static_content` in
+  `tools/seatable_sync.py`. Dat gebeurt tussen `<!-- stat:naam -->`-markeringen (dezelfde soort markering als `shell:nav` en
+  `shell:footer`, zie hieronder); JavaScript overschrijft die inhoud meteen met exact dezelfde berekening zodra de pagina
+  laadt, dus er is geen zichtbare flits. Verplaats je zo'n markering of het element eromheen (`#stats`, `#statsNote`, het
+  tabblad "Sinds ...", `#lastUpdateNote`, `#recentReportsBody`, de `<noscript>`-tekst), dan waarschuwt de sync en blijft die
+  ene plek ongemoeid — de rest van de sync gaat door. `python3 tools/seatable_sync.py --stamp` ververst dit zonder token.
 
 ## Filteren, afspelen, hitte-laag en delen
 

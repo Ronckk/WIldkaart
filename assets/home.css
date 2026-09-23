@@ -214,6 +214,13 @@
   }
   .sub b{ color:var(--ink); font-weight:600; }
 
+  /* homepage heeft een extra filterrij (soort: wolf/zwijn/overig) dan de soortpagina's, dus hoger dan de standaard
+     reservering in assets/map-tools.css (zelfde reden: voorkomt een layout shift zodra WDK.mountExplorer #explorer vult) */
+  #explorer{ min-height:246px; }
+  @media (max-width:640px){
+    #explorer{ min-height:44px; }
+  }
+
   .map-search{ position:relative; margin-bottom:10px; }
   .search-input{
     width:100%;

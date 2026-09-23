@@ -55,20 +55,20 @@
   </nav>
 </div></header>
 <!-- /shell:nav -->
-<div class="page">
+<main class="page">
   <header class="hero">
     <h1>Wolvenmeldingen op de Veluwe</h1>
     <p class="sub">Op deze kaart staan de gecontroleerde wolvenmeldingen op de Veluwe: zichtmeldingen en aanvallen op vee. Klik op een stip voor de details, filter op periode of speel de maanden af. Hoe een melding op de kaart komt, lees je op <a href="over">Over deze site</a>.</p>
   </header>
-  <noscript><div class="notice">Voor de kaart en de cijfers op deze pagina is JavaScript nodig. Schakel JavaScript in, of gebruik een andere browser.</div></noscript>
+  <noscript><div class="notice">Voor de kaart en de filters op deze pagina is JavaScript nodig. <!-- stat:noscript -->17 meldingen. Schakel JavaScript in voor de kaart en de filters.<!-- /stat:noscript --></div></noscript>
 
   <div class="tabs" role="tablist">
-    <button class="tab active" data-set="all" role="tab" aria-selected="true">Sinds nov 2025</button>
+    <button class="tab active" data-set="all" role="tab" aria-selected="true"><!-- stat:since -->Sinds sep 2026<!-- /stat:since --></button>
     <button class="tab" data-set="last2w" role="tab" aria-selected="false">Laatste 2 weken (3&ndash;17 sep)</button>
   </div>
 
-  <section class="stats" id="stats"></section>
-  <p class="stats-note" id="statsNote"></p>
+  <section class="stats" id="stats"><!-- stat:tiles --><div class="stat"><div class="n">17</div><div class="l">Meldingen</div></div><div class="stat k-zicht"><div class="n">10</div><div class="l">Zichtmeldingen</div></div><div class="stat k-aanval"><div class="n">7</div><div class="l">Aanvallen op vee</div></div><div class="stat"><div class="n">17</div><div class="l">Plaatsen &middot; 2 sep 2026 &ndash; 22 sep 2026</div></div><!-- /stat:tiles --></section>
+  <p class="stats-note" id="statsNote"><!-- stat:note -->Cijfers en kaart gelden voor de Veluwe. Daarbuiten: 1 melding, waarvan 1 aanval op vee (zie de <a href="./">landelijke kaart</a>).<!-- /stat:note --></p>
 
   <section class="map-card">
     <div class="map-search">
@@ -103,7 +103,7 @@
 
   <section class="animal-card" id="funCard"></section>
 
-</div>
+</main>
 <!-- shell:footer -->
 <footer class="site-footer"><div class="site-footer-inner">
     <div class="footer-cols">

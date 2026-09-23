@@ -656,6 +656,80 @@ class SyncTest(unittest.TestCase):
         self.assertTrue(all('g' not in b for b in wolf))
         self.assertFalse((self.tmp / 'tools' / 'gemeente-cache.json').exists())
 
+    # ------------------------------------------------------------ echte cijfers in de statische HTML (crawlers zonder JS)
+    def test_stat_compute_matches_the_hand_worked_example(self):
+        places = [
+            {'n': 'A', 'ev': [{'d': '2026-09-10', 'ty': 'zichtmelding'}, {'d': '2026-09-05', 'ty': 'aanval'}]},
+            {'n': 'B', 'ev': [{'d': '2026-09-12', 'ty': 'jonkies'}, {'d': '2026-09-01', 'ty': 'schurft'}]},
+        ]
+        s = sync.stat_compute(places)
+        self.assertEqual(s, {'total': 4, 'byType': {'zichtmelding': 1, 'aanval': 1, 'jonkies': 1, 'overig': 1},
+                             'places': 2, 'dateMin': '2026-09-01', 'dateMax': '2026-09-12'})
+        self.assertEqual(sync.stat_compute([]), {'total': 0, 'byType': {'zichtmelding': 0, 'aanval': 0, 'jonkies': 0, 'overig': 0},
+                                                  'places': 0, 'dateMin': None, 'dateMax': None})
+
+    def test_stat_text_helpers(self):
+        self.assertEqual(sync.stat_fmt_date('2026-09-06'), '6 sep 2026')
+        self.assertEqual(sync.stat_month_year('2026-11-03'), 'nov 2026')
+        self.assertEqual(sync.stat_meldingen(1), '1 melding')
+        self.assertEqual(sync.stat_meldingen(2), '2 meldingen')
+        self.assertEqual(sync.stat_name_html('Putten'), 'Putten')
+        self.assertEqual(sync.stat_name_html('Putten (exacte locatie)'),
+                          'Putten<span class="exact-badge" title="Exacte locatie">&#10003;</span>')
+        self.assertEqual(sync.stat_name_html('Vee & co'), 'Vee &amp; co')                    # escaped, net als WDK.esc
+
+    def test_stat_note_html_matches_render_scope_note(self):
+        outside_none = sync.stat_compute([])
+        self.assertEqual(sync.stat_note_html(outside_none, 'de Veluwe', True), 'Cijfers en kaart gelden voor de Veluwe.')
+        outside = sync.stat_compute([{'n': 'X', 'ev': [{'d': '2026-09-01', 'ty': 'aanval'}, {'d': '2026-09-02', 'ty': 'zichtmelding'}]}])
+        self.assertEqual(sync.stat_note_html(outside, 'de Veluwe', True),
+                          'Cijfers en kaart gelden voor de Veluwe. Daarbuiten: 2 meldingen, waarvan 1 aanval op vee '
+                          '(zie de <a href="./">landelijke kaart</a>).')
+        self.assertEqual(sync.stat_note_html(outside, 'de Veluwe', False),                    # attacks=False: geen aanvalszin
+                          'Cijfers en kaart gelden voor de Veluwe. Daarbuiten: 2 meldingen (zie de <a href="./">landelijke kaart</a>).')
+
+    def test_missing_marker_warns_but_does_not_crash(self):
+        warns = []
+        html = sync.stat_set('<p>geen markering hier</p>', 'tiles', 'x', warns.append)
+        self.assertEqual(html, '<p>geen markering hier</p>')
+        self.assertIn('stat:tiles', warns[0])
+
+    def test_render_static_content_fills_real_numbers_and_is_idempotent(self):
+        self.real_layout()
+        self.assertEqual(self.run_sync('--force'), 0)
+        data = sync.load_data_file(self.tmp / 'data' / 'wolven-data.js')
+        expected = sync.stat_compute(data['veluwe']['all'])
+
+        wolven_html = (self.tmp / 'wolven.html').read_text(encoding='utf-8')
+        self.assertIn('<!-- stat:tiles --><div class="stat"><div class="n">%d</div>' % expected['total'], wolven_html)
+        self.assertIn('Sinds ' + sync.stat_month_year(expected['dateMin']), wolven_html)
+        self.assertNotIn('Sinds nov 2025', wolven_html)                                       # placeholder is echt vervangen
+        self.assertIn('<!-- stat:noscript -->%s.' % sync.stat_meldingen(expected['total']), wolven_html)
+
+        index_html = (self.tmp / 'index.html').read_text(encoding='utf-8')
+        self.assertIn('<!-- stat:updated -->Laatste check op', index_html)
+        self.assertNotIn('Meldingen laden&hellip;<!-- /stat:updated -->', index_html)         # placeholder is echt vervangen
+        self.assertIn('rt-place', index_html)                                                 # de tabel heeft echte rijen
+        self.assertNotIn('<tr><td colspan="4">Meldingen laden', index_html)
+
+        # nog een keer draaien zonder nieuwe meldingen: dezelfde cijfers, dus geen wijziging
+        before = wolven_html, index_html
+        self.assertEqual(self.run_sync('--force'), 0)
+        after = (self.tmp / 'wolven.html').read_text(encoding='utf-8'), (self.tmp / 'index.html').read_text(encoding='utf-8')
+        self.assertEqual(before, after)
+
+    def test_stamp_command_also_refreshes_static_content_without_a_token(self):
+        self.real_layout()
+        self.assertEqual(self.run_sync('--force'), 0)
+        # --stamp heeft (net als hier) geen SEATABLE_API_TOKEN nodig: het werkt alleen met data/*.js zoals dat op schijf staat.
+        # De tegels terugzetten op de lege markering simuleert een verse checkout van het HTML-sjabloon.
+        p = self.tmp / 'wolven.html'
+        stale = re.sub(r'<!-- stat:tiles -->.*?<!-- /stat:tiles -->', '<!-- stat:tiles --><!-- /stat:tiles -->', p.read_text(), flags=re.S)
+        p.write_text(stale, encoding='utf-8')
+        self.assertNotIn('class="stat"', p.read_text())
+        self.assertEqual(sync.main(['--config', str(self.cfg_path), '--root', str(self.tmp), '--stamp']), 0)
+        self.assertIn('class="stat"', p.read_text())
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

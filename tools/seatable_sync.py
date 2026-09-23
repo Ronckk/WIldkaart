@@ -651,6 +651,209 @@ def stamp_html(root, cfg, dry=False, assets=False):
     return changed
 
 
+# ---------------------------------------------------------------- echte cijfers in de statische HTML (voor crawlers zonder JS)
+# De cijfers, de tabel "net binnen gekomen meldingen" en de statistiektegels worden pas getoond als JavaScript draait
+# (assets/site.js en assets/*-page.js). Prima voor bezoekers, maar een crawler die geen JavaScript uitvoert (of Google's
+# eerste, snelle crawl-ronde) ziet dan alleen een lege sjabloonpagina. De functies hieronder zetten dezelfde cijfers, met
+# dezelfde berekening als assets/site.js, alvast in de HTML, tussen <!-- stat:x --> markeringen; zodra de pagina laadt
+# overschrijft JavaScript ze met exact dezelfde inhoud (dus geen zichtbare flits). Ze werken op de data/*.js-bestanden
+# zoals ze op schijf staan, dus ook los van een SeaTable-sync (bv. na een handmatige wijziging, of via --stamp).
+MONTHS = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+STAT_TYPE_LABEL = {
+    'zichtmelding': 'Zichtmelding', 'aanval': 'Aanval op vee', 'jonkies': 'Met jonkies gezien',
+    'aanrijding': 'Aanrijding', 'dood': 'Dood aangetroffen', 'schurft': 'Schurft', 'overig': 'Overig',
+}
+# wolf/zwijn hebben een eigen pagina, "andere" is de pagina Overig (zie SPECIES in assets/site.js)
+STAT_SPECIES = {
+    'wolf': {'label': 'Wolf', 'emoji': '\U0001F43A', 'page': 'wolven'},
+    'zwijn': {'label': 'Zwijn', 'emoji': '\U0001F417', 'page': 'zwijnen'},
+    'andere': {'label': 'Overig', 'emoji': '\U0001F43E', 'page': 'overig'},
+}
+EXACT_SUFFIX_RE = re.compile(r' \(exacte locatie\)$')
+
+
+def stat_esc(s):
+    return str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+
+
+def stat_name_html(n):
+    """Zelfde als WDK.nameHtml in assets/site.js: "X (exacte locatie)" wordt de naam plus een vinkje."""
+    m = EXACT_SUFFIX_RE.search(n)
+    badge = '<span class="exact-badge" title="Exacte locatie">&#10003;</span>' if m else ''
+    return stat_esc(EXACT_SUFFIX_RE.sub('', n)) + badge
+
+
+def stat_fmt_date(iso):
+    y, m, d = iso.split('-')
+    return '%d %s %s' % (int(d), MONTHS[int(m) - 1], y)
+
+
+def stat_month_year(iso):
+    y, m, _d = iso.split('-')
+    return '%s %s' % (MONTHS[int(m) - 1], y)
+
+
+def stat_meldingen(n):
+    return '%d %s' % (n, 'melding' if n == 1 else 'meldingen')
+
+
+def stat_bucket_of(ty):
+    return ty if ty in ('zichtmelding', 'aanval', 'jonkies') else 'overig'
+
+
+def stat_compute(places):
+    """Zelfde als WDK.stats in assets/site.js: totaal, per type, aantal plaatsen, vroegste/laatste datum."""
+    s = {'total': 0, 'byType': {'zichtmelding': 0, 'aanval': 0, 'jonkies': 0, 'overig': 0},
+         'places': len(places), 'dateMin': None, 'dateMax': None}
+    for p in places:
+        ev = p.get('ev') or []
+        s['total'] += len(ev)
+        for e in ev:
+            s['byType'][stat_bucket_of(e['ty'])] += 1
+            d = e['d']
+            if s['dateMin'] is None or d < s['dateMin']:
+                s['dateMin'] = d
+            if s['dateMax'] is None or d > s['dateMax']:
+                s['dateMax'] = d
+    return s
+
+
+def stat_tiles_html(s, third_key, third_label):
+    """Zelfde vier tegels als renderStats() in wolven-/zwijnen-/overig-page.js. third_key/third_label is de derde tegel:
+    aanval/"Aanvallen op vee" op de wolvenpagina, jonkies/"Met jonkies" op de zwijnen- en overig-pagina."""
+    period = ''
+    if s['dateMin']:
+        period = ' &middot; %s &ndash; %s' % (stat_fmt_date(s['dateMin']), stat_fmt_date(s['dateMax']))
+    return (
+        '<div class="stat"><div class="n">%d</div><div class="l">Meldingen</div></div>'
+        '<div class="stat k-zicht"><div class="n">%d</div><div class="l">Zichtmeldingen</div></div>'
+        '<div class="stat k-%s"><div class="n">%d</div><div class="l">%s</div></div>'
+        '<div class="stat"><div class="n">%d</div><div class="l">Plaatsen%s</div></div>'
+    ) % (s['total'], s['byType']['zichtmelding'], third_key, s['byType'][third_key], third_label, s['places'], period)
+
+
+def stat_note_html(outside, where, attacks):
+    """Zelfde als WDK.renderScopeNote in assets/site.js: wat er buiten de Veluwe is gemeld."""
+    txt = 'Cijfers en kaart gelden voor %s.' % where
+    if outside['total']:
+        txt += ' Daarbuiten: ' + stat_meldingen(outside['total'])
+        n = outside['byType']['aanval']
+        if attacks and n:
+            txt += ', waarvan %d %s op vee' % (n, 'aanval' if n == 1 else 'aanvallen')
+        txt += ' (zie de <a href="./">landelijke kaart</a>).'
+    return txt
+
+
+def stat_set(html, name, inner, warn):
+    """Vervangt de inhoud tussen <!-- stat:name --> en <!-- /stat:name -->. Ontbreekt de markering (bv. een pagina die niet
+    is bijgewerkt naar het nieuwe sjabloon), dan waarschuwt dit en blijft de HTML voor de rest ongemoeid."""
+    pat = re.compile(r'<!-- stat:%s -->.*?<!-- /stat:%s -->' % (re.escape(name), re.escape(name)), re.S)
+    new, n = pat.subn(lambda m: '<!-- stat:%s -->%s<!-- /stat:%s -->' % (name, inner, name), html, count=1)
+    if n == 0:
+        warn('markering <!-- stat:%s --> niet gevonden; die inhoud is niet bijgewerkt.' % name)
+    return new
+
+
+def render_species_page(root, filename, data, third, note_where, warn, since_tab=False):
+    """data = het ingelezen data/<soort>-data.js. third = (key, label) voor de derde statistiektegel. note_where =
+    (waar, met_aanvallen) voor de #statsNote-tekst, of None als de pagina die niet heeft (overig.html). since_tab: alleen
+    wolven.html heeft het tabblad "Sinds <maand jaar>"."""
+    path = root / filename
+    if not path.exists() or not data:
+        return False
+    html = original = path.read_text(encoding='utf-8')
+    veluwe = (data.get('veluwe') or {}).get('all', [])
+    s = stat_compute(veluwe)
+    html = stat_set(html, 'tiles', stat_tiles_html(s, third[0], third[1]), warn)
+    if since_tab and s['dateMin']:
+        html = stat_set(html, 'since', 'Sinds ' + stat_month_year(s['dateMin']), warn)
+    if note_where:
+        where, attacks = note_where
+        outside = stat_compute(data.get('overig') or [])
+        html = stat_set(html, 'note', stat_note_html(outside, where, attacks), warn)
+    noscript = (stat_meldingen(s['total']) if s['total'] else 'Nog geen meldingen') + '. Schakel JavaScript in voor de kaart en de filters.'
+    html = stat_set(html, 'noscript', noscript, warn)
+    if html == original:
+        return False
+    path.write_text(html, encoding='utf-8')
+    return True
+
+
+def render_home_page(root, species_data, warn):
+    """species_data = {'wolf':data, 'zwijn':data, 'andere':data} (ingelezen data/*.js). Vult de tabel "Net binnen gekomen
+    meldingen" en de "laatste check"-tekst met de RECENT_MAX meest recente meldingen over alle soorten (Veluwe en elders),
+    op dezelfde manier gesorteerd als de live tabel (assets/home-stats.js: WDK.events + WDK.cmpEvents)."""
+    path = root / 'index.html'
+    if not path.exists():
+        return False
+    html = original = path.read_text(encoding='utf-8')
+    RECENT_MAX = 15
+    events, updates = [], []
+    for key, data in species_data.items():
+        if not data:
+            continue
+        if data.get('updatedAt'):
+            updates.append(data['updatedAt'])
+        meta = STAT_SPECIES[key]
+        places = (data.get('veluwe') or {}).get('all', []) + list(data.get('overig') or [])
+        for p in places:
+            for e in (p.get('ev') or []):
+                events.append(dict(e, place=p['n'], species=meta))
+    events.sort(key=ev_sort_key, reverse=True)
+    recent = events[:RECENT_MAX]
+    if recent:
+        rows = []
+        for e in recent:
+            if e['ty'] == 'zichtmelding':
+                type_class = ' class="rt-type-zicht"'
+            elif e['ty'] == 'aanval':
+                type_class = ' class="rt-type-aanval"'
+            else:
+                type_class = ''
+            when = stat_fmt_date(e['d']) + (', ' + e['tm'] if e.get('tm') else '')
+            dier = stat_esc(e.get('diersoort') or e['species']['label'])
+            rows.append(
+                '<tr><td class="rt-place" data-label="Plaats">%s</td><td data-label="Datum">%s</td>'
+                '<td data-label="Dier"><a class="rt-species" href="%s">%s %s</a></td>'
+                '<td data-label="Type"%s>%s</td></tr>' % (
+                    stat_name_html(e['place']), when, e['species']['page'], e['species']['emoji'], dier,
+                    type_class, STAT_TYPE_LABEL.get(e['ty'], e['ty'])))
+        html = stat_set(html, 'recent', ''.join(rows), warn)
+    last_update = max(updates) if updates else None
+    if last_update:
+        d, _sep, t = last_update.partition('T')
+        text = 'Laatste check op ' + stat_fmt_date(d) + (', ' + t + ' uur' if t else '') + '.'
+    else:
+        text = 'Nog geen meldingen toegevoegd.'
+    html = stat_set(html, 'updated', text, warn)
+    html = stat_set(html, 'noscript', text + ' Schakel JavaScript in voor de kaart en de filters.', warn)
+    if html == original:
+        return False
+    path.write_text(html, encoding='utf-8')
+    return True
+
+
+def render_static_content(root, warn=None):
+    """Leest data/*.js zoals ze nu op schijf staan en zet de echte cijfers in de statische HTML (zie hierboven). Draait na
+    elke sync, en kan ook los daarvan opnieuw (de bestanden op schijf zijn de enige bron). -> lijst bijgewerkte paginanamen."""
+    warn = warn or (lambda msg: None)
+    data = {
+        'wolf': load_data_file(root / 'data' / 'wolven-data.js'),
+        'zwijn': load_data_file(root / 'data' / 'zwijnen-data.js'),
+        'andere': load_data_file(root / 'data' / 'overig-data.js'),
+    }
+    changed = []
+    if render_species_page(root, 'wolven.html', data['wolf'], ('aanval', 'Aanvallen op vee'), ('de Veluwe', True), warn, since_tab=True):
+        changed.append('wolven.html')
+    if render_species_page(root, 'zwijnen.html', data['zwijn'], ('jonkies', 'Met jonkies'), ('de Veluwe', False), warn):
+        changed.append('zwijnen.html')
+    if render_species_page(root, 'overig.html', data['andere'], ('jonkies', 'Met jonkies'), None, warn):
+        changed.append('overig.html')
+    if render_home_page(root, data, warn):
+        changed.append('index.html')
+    return changed
+
+
 def is_unchanged(existing, built):
     """Staat er al precies deze inhoud in het bestand? (`updatedAt` telt niet mee: die zegt wanneer er iets NIEUWS bij kwam.)"""
     return bool(existing) and existing.get('veluwe') == {'all': built['veluwe']} and existing.get('overig') == built['overig']
@@ -743,6 +946,12 @@ def cmd_sync(sea, cfg, root, dry, force):
     changed = stamp_html(root, cfg)
     if changed:
         print('Versienummer van de data bijgewerkt in: %s' % ', '.join(changed))
+    static_warns = []
+    static_changed = render_static_content(root, warn=static_warns.append)
+    for w in static_warns:
+        print('LET OP: ' + w)
+    if static_changed:
+        print('Statische inhoud (cijfers, tabel) bijgewerkt in: %s' % ', '.join(static_changed))
     if not wrote:
         print('\nGeen nieuwe meldingen: alle bestanden zijn ongewijzigd.')
         return
@@ -789,7 +998,7 @@ def main(argv=None):
     ap.add_argument('--sample', action='store_true', help='bij --inspect: ook twee voorbeeldrijen tonen')
     ap.add_argument('--dry-run', action='store_true', help='alles doorrekenen maar niets schrijven')
     ap.add_argument('--force', action='store_true', help='schrijf ook als er veel minder meldingen zijn dan nu')
-    ap.add_argument('--stamp', action='store_true', help='alleen de versienummers achter de data-scripts in de HTML-pagina\'s bijwerken')
+    ap.add_argument('--stamp', action='store_true', help='alleen de versienummers en de statische cijfers/tabel in de HTML-pagina\'s bijwerken, uit data/*.js zoals dat nu op schijf staat')
     ap.add_argument('--assets', action='store_true', help='bij --stamp: ook de versienummers achter assets/*.js en assets/*.css')
     ap.add_argument('--export-legacy', action='store_true', help='schrijf de huidige data als CSV voor import in SeaTable')
     ap.add_argument('--server', help='overschrijft "server" uit de config')
@@ -802,6 +1011,11 @@ def main(argv=None):
         if args.stamp:
             changed = stamp_html(root, cfg, assets=args.assets)
             print('Versienummer bijgewerkt in: %s' % ', '.join(changed) if changed else 'Alle versienummers waren al actueel.')
+            static_warns = []
+            static_changed = render_static_content(root, warn=static_warns.append)
+            for w in static_warns:
+                print('LET OP: ' + w)
+            print('Statische inhoud bijgewerkt in: %s' % ', '.join(static_changed) if static_changed else 'Statische inhoud was al actueel.')
             return 0
         load_env(ROOT / 'tools' / '.env')
         token = os.environ.get('SEATABLE_API_TOKEN', '').strip()
