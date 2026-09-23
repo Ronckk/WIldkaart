@@ -1,1 +1,1 @@
-window.HERTEN_DATA = {"updatedAt": null, "veluwe": {"all": []}, "overig": []};
+window.HERTEN_DATA = {"updatedAt": "2026-09-23T23:33", "veluwe": {"all": [{"n": "Emst", "lat": 52.324476, "lon": 5.955673, "g": "Epe", "ev": [{"d": "2026-09-19", "ty": "zichtmelding", "tm": "03:17"}]}, {"n": "Vierhouten", "lat": 52.329252, "lon": 5.840272, "g": "Nunspeet", "ev": [{"d": "2026-09-23", "ty": "zichtmelding", "tm": "21:24"}]}]}, "overig": []};
