@@ -177,6 +177,8 @@ def norm_type(v, default):
         return 'jonkies'
     if 'aanrij' in t:
         return 'aanrijding'
+    if 'dood' in t:
+        return 'dood'
     if 'schurft' in t:
         return 'schurft'
     return 'overig'
@@ -432,6 +434,65 @@ class PlaceLookup:
             self.dirty = False
 
 
+def pdok_gemeente(lat, lon):
+    """Gemeente waarin een coördinaat ligt (gratis, geen sleutel); None als PDOK er geen kent (bv. in Duitsland).
+    PDOK rekent hier met de gemeentegrens zelf, niet met het dichtstbijzijnde dorp, dus ook op het platteland klopt het."""
+    q = urllib.parse.urlencode({'lat': lat, 'lon': lon, 'type': 'gemeente', 'rows': 1, 'distance': 1000, 'fl': 'gemeentenaam'})
+    docs = http_json(PDOK_REVERSE + '?' + q, service='PDOK').get('response', {}).get('docs', [])
+    return docs[0].get('gemeentenaam') if docs else None
+
+
+class GemeenteLookup:
+    """Zoekt de gemeente bij een coördinaat op en onthoudt de antwoorden (tools/gemeente-cache.json), zodat elk punt maar één keer
+    bij PDOK wordt opgevraagd. Een "niet gevonden" wordt nooit onthouden (kan een haperende dienst zijn)."""
+
+    def __init__(self, path, enabled=True):
+        self.path, self.enabled = path, enabled
+        self.cache, self.dirty, self.fetched, self.errors = {}, False, 0, []
+        self.negative = set()
+        if path and path.exists():
+            try:
+                self.cache = {k: v for k, v in json.loads(path.read_text(encoding='utf-8')).items() if v}
+            except ValueError:
+                self.cache = {}
+
+    def get(self, lat, lon):
+        key = '%.4f,%.4f' % (lat, lon)
+        if key in self.cache:
+            return self.cache[key]
+        if key in self.negative or not self.enabled:
+            return None
+        try:
+            name = pdok_gemeente(lat, lon)
+        except SyncError as e:
+            if str(e) not in self.errors:
+                self.errors.append(str(e))
+            return None
+        self.fetched += 1
+        if name:
+            self.cache[key] = name
+            self.dirty = True
+        else:
+            self.negative.add(key)
+        time.sleep(0.05)
+        return name
+
+    def save(self):
+        if self.dirty and self.path:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.write_text(json.dumps(self.cache, ensure_ascii=False, indent=0, sort_keys=True), encoding='utf-8')
+            self.dirty = False
+
+
+def resolve_gemeenten(recs, lookup, warn):
+    """Vult `gemeente` in bij elke melding met coördinaten. De kaart voegt bij uitzoomen meldingen in dezelfde gemeente samen."""
+    for r in recs:
+        if r['lat'] is not None and r['lon'] is not None:
+            r['gemeente'] = lookup.get(r['lat'], r['lon'])
+    for e in lookup.errors:
+        warn('Gemeente opzoeken lukte niet (%s). Betreffende plekken krijgen geen gemeente; draai het script later opnieuw.' % e)
+
+
 def resolve_places(recs, lookup, warn, need_town_center=False):
     """Vult `place` in voor records zonder plaatsnaam (en `town_lat/town_lon`, het middelpunt van dat dorp, als dat nodig is).
     Punten met een bekende plaatsnaam worden alleen opgezocht in modus "town"."""
@@ -488,7 +549,7 @@ def known_coords(data):
 
 
 def build_species(recs, cfg, known, warn):
-    """recs (één diersoort) -> {'veluwe': [plaatsen], 'overig': [plaatsen]} met plaats = {n, lat, lon, ev}.
+    """recs (één diersoort) -> {'veluwe': [plaatsen], 'overig': [plaatsen]} met plaats = {n, lat, lon, g (gemeente, als bekend), ev}.
     position "exact": één bolletje per exact gemeld punt (meldingen op hetzelfde punt tellen samen);
     position "town":  één bolletje per plaats, op het middelpunt van die plaats."""
     exact = cfg.get('position', 'exact') == 'exact'
@@ -498,11 +559,13 @@ def build_species(recs, cfg, known, warn):
             key = (norm(r['place']), round(r['lat'], 4), round(r['lon'], 4))
         else:
             key = (norm(r['place']),)
-        g = groups.setdefault(key, {'n': r['place'], 'coords': [], 'town': None, 'ev': [], 'regio': set()})
+        g = groups.setdefault(key, {'n': r['place'], 'coords': [], 'town': None, 'gem': None, 'ev': [], 'regio': set()})
         if r['lat'] is not None and r['lon'] is not None:
             g['coords'].append((r['lat'], r['lon']))
         if r.get('town_lat') is not None and g['town'] is None:
             g['town'] = (r['town_lat'], r['town_lon'])
+        if r.get('gemeente') and g['gem'] is None:
+            g['gem'] = r['gemeente']
         if r['regio']:
             g['regio'].add(r['regio'])
         e = {'d': r['d'], 'ty': r['ty']}
@@ -529,7 +592,10 @@ def build_species(recs, cfg, known, warn):
         else:
             warn('"%s": geen coördinaten in SeaTable en niet bekend uit de huidige data - %d melding(en) overgeslagen.' % (g['n'], len(g['ev'])))
             continue
-        place = {'n': g['n'], 'lat': round(lat, 6), 'lon': round(lon, 6), 'ev': g['ev']}
+        place = {'n': g['n'], 'lat': round(lat, 6), 'lon': round(lon, 6)}
+        if g['gem']:
+            place['g'] = g['gem']  # gemeente: de kaart voegt bij uitzoomen bolletjes in dezelfde gemeente samen
+        place['ev'] = g['ev']
         if any('overig' in r for r in g['regio']):
             region = 'overig'
         elif any('veluwe' in r for r in g['regio']):
@@ -640,6 +706,11 @@ def cmd_sync(sea, cfg, root, dry, force):
     lookup.save()
     if lookup.fetched:
         print('Plaatsnamen opgezocht bij PDOK: %d nieuwe punten (de rest kwam uit tools/place-cache.json)' % lookup.fetched)
+    gemeenten = GemeenteLookup(root / 'tools' / 'gemeente-cache.json', lcfg.get('enabled', True))
+    resolve_gemeenten(recs, gemeenten, warn)
+    gemeenten.save()
+    if gemeenten.fetched:
+        print('Gemeenten opgezocht bij PDOK: %d nieuwe punten (de rest kwam uit tools/gemeente-cache.json)' % gemeenten.fetched)
     now = datetime.now(AMS).strftime('%Y-%m-%dT%H:%M')
     problems = []
     plan = []

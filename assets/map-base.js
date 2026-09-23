@@ -140,7 +140,7 @@
       });
       m.bindPopup(o.popup(b), { maxWidth:240 });
       if (b.ev.length && (!latest || b.ev[0].d > latest.ev[0].d)){ latest = b; latestId = id; }
-      return { id:id, lat:b.lat, lon:b.lon, w:b.t, rank:WDK.DOM_RANK[b.dom], color:color, marker:m };
+      return { id:id, lat:b.lat, lon:b.lon, g:b.g, w:b.t, rank:WDK.DOM_RANK[b.dom], color:color, marker:m };
     });
     return { items:items, latest:latest, latestId:latestId };
   };

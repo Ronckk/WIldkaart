@@ -111,6 +111,9 @@ kolom `Type` mag dat overschrijven. `Tijd`, `Regio` en `Plaats` mogen erbij als 
   onthoudt het antwoord in `tools/place-cache.json`, dus elk punt wordt maar één keer opgevraagd. Punten die meer dan
   5 km van een Nederlandse woonplaats liggen (bv. Duitsland) heten "Onbekende locatie". Valt PDOK even uit, dan blijven
   de meldingen bewaard en draai je het script later opnieuw.
+- **Gemeente:** bij elke plek zoekt het script ook de gemeente op (PDOK, op de gemeentegrens zelf) en zet die als `g` in het
+  databestand. Het antwoord staat in `tools/gemeente-cache.json`; een "niet gevonden" wordt niet onthouden. Zonder `g`
+  (bv. een punt buiten Nederland) werkt de kaart gewoon, die plek wordt dan alleen op afstand samengevoegd.
 - **Omgewisselde coördinaten:** komt een punt buiten het gebied `coords_box` (Nederland en omgeving) uit, maar liggen breedte en
   lengte andersom wel binnen dat gebied, dan draait de sync ze om en zet een waarschuwing in de log (corrigeer het ook in
   SeaTable). Ligt een punt ver buiten het gebied in beide richtingen, dan wordt het alleen gemeld. Een "niet gevonden" van
@@ -173,8 +176,11 @@ rechtstreeks naar de formulieren.
 Op de homepage en de wolven-, zwijnen- en overig-pagina voegt `WDK.clusterLayer` (`assets/map-tools.js`) bolletjes die dicht bij
 elkaar liggen samen tot één cluster met het totale aantal meldingen. Klik je op een cluster, dan zoom je in en valt het uit elkaar;
 uitzoomen voegt ze weer samen. "Dicht bij elkaar" betekent: hoogstens **5 km** in werkelijkheid én hoogstens **60 pixels** op het
-scherm, en vanaf zoomniveau **16** staat elk bolletje los. De drie getallen staan in `CLUSTER` bovenin dat blok
-(`maxKm`, `maxPx`, `noClusterZoom`). Wil je dat bolletjes ook bij een landelijk beeld al eerder samengaan (nu gebeurt dat alleen
+scherm, en vanaf zoomniveau **16** staat elk bolletje los. Daarnaast gaan bolletjes in **dezelfde gemeente** samen zodra je
+onder zoomniveau **10** uitzoomt (dus 9 en lager), ook als ze verder dan 5 km uit elkaar liggen; het cluster staat dan op het
+gewogen midden van die bolletjes en de tooltip noemt de gemeente. Op niveau 10 en hoger (het beginbeeld van de wolven- en
+zwijnenpagina) telt alleen de afstand. De vier getallen staan in `CLUSTER` bovenin dat blok
+(`maxKm`, `maxPx`, `noClusterZoom`, `gemeenteZoom`). Wil je dat bolletjes ook bij een landelijk beeld al eerder samengaan (nu gebeurt dat alleen
 binnen 5 km), verhoog dan `maxKm`. De kleur van een cluster is die van de belangrijkste melding erin (aanval, dan jonkies, dan zicht);
 op de homepage is een cluster met meerdere diersoorten grijs. Het zoeken van een plaats zoomt zo ver in dat het bolletje los staat en opent
 dan zijn popup. De rekenregel zelf is `WDK.clusterPoints(items, zoom)` en heeft geen kaart nodig.
@@ -286,7 +292,7 @@ De site staat in een GitHub-repo en wordt met GitHub Pages gepubliceerd op **wil
 `.github/workflows/site.yml` doet twee dingen:
 
 - **Elke 3 uur** (en met de knop *Actions > Site > Run workflow*): `tools/seatable_sync.py` draaien. Zijn er nieuwe
-  meldingen, dan worden `data/`, het versienummer in de HTML en `tools/place-cache.json` gecommit en wordt de site
+  meldingen, dan worden `data/`, het versienummer in de HTML en `tools/place-cache.json` en `tools/gemeente-cache.json` gecommit en wordt de site
   opnieuw gepubliceerd. Zijn er geen nieuwe meldingen, dan gebeurt er niets (geen commit, geen publicatie).
 - **Bij elke push naar `main`**: de site opnieuw publiceren. Gepubliceerd worden de pagina's (`index.html`, `wolven.html`,
   `zwijnen.html`, `overig.html`, `over.html`, `404.html`), `robots.txt`, een vers gemaakte `sitemap.xml`, `assets/` en `data/`

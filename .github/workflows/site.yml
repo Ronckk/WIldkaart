@@ -44,7 +44,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data tools/place-cache.json index.html wolven.html zwijnen.html overig.html over.html 404.html
+          git add data tools/place-cache.json tools/gemeente-cache.json index.html wolven.html zwijnen.html overig.html over.html 404.html
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "Geen nieuwe meldingen."

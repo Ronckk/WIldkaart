@@ -1,1 +1,1 @@
-window.OVERIG_DATA = {"updatedAt": "2026-09-19T17:47", "veluwe": {"all": [{"n": "Welsum", "lat": 52.3063, "lon": 6.09991, "ev": [{"d": "2026-09-02", "ty": "zichtmelding", "tm": "20:36", "diersoort": "Ree"}]}]}, "overig": []};
+window.OVERIG_DATA = {"updatedAt": "2026-09-19T17:47", "veluwe": {"all": [{"n": "Welsum", "lat": 52.3063, "lon": 6.09991, "g": "Olst-Wijhe", "ev": [{"d": "2026-09-02", "ty": "zichtmelding", "tm": "20:36", "diersoort": "Ree"}]}]}, "overig": []};
