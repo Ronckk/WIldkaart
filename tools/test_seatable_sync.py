@@ -210,6 +210,8 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(sync.as_text({'name': 'Aanval op vee'}), 'Aanval op vee')
         self.assertEqual(sync.norm_type('Aanval op vee', 'zichtmelding'), 'aanval')
         self.assertEqual(sync.norm_type('Met jonkies gezien', 'zichtmelding'), 'jonkies')
+        self.assertEqual(sync.norm_type('Aanrijding', 'zichtmelding'), 'aanrijding')
+        self.assertEqual(sync.norm_type('Dood aangetroffen', 'zichtmelding'), 'dood')
         self.assertEqual(sync.norm_type('', 'aanval'), 'aanval')
         self.assertEqual(sync.norm_species('Wolven', 'wolf', {'wolf', 'zwijn'}), 'wolf')
         self.assertEqual(sync.norm_species('Wild zwijn', 'wolf', {'wolf', 'zwijn'}), 'zwijn')
@@ -554,6 +556,25 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(sorted((e['d'], e['ty']) for b in zwijn for e in b['ev']), [('2026-09-19', 'zichtmelding'), ('2026-09-20', 'jonkies')])
         _, other = self.places('overig-data.js')
         self.assertEqual([(e['diersoort'], e['ty']) for b in other for e in b['ev']], [('Ree', 'jonkies')])   # de naam zonder "met jonkies"
+
+    # ------------------------------------------------------------ kolom "Gebeurtenis" (aanrijding / dood aangetroffen)
+    def test_gebeurtenis_column_is_read_as_the_type(self):
+        cols = [('Dier', 'single-select'), ('Datum', 'date'), ('Gebeurtenis', 'single-select'),
+                ('Latitude', 'number'), ('Longitude', 'number')]
+        Mock.tables = {
+            'Zichtmeldingen': {'columns': cols, 'rows': [
+                {'Dier': 'Wolf', 'Datum': '2026-09-20', 'Gebeurtenis': 'Zichtmelding', 'Latitude': 52.30, 'Longitude': 5.70},
+                {'Dier': 'Wolf', 'Datum': '2026-09-19', 'Gebeurtenis': 'Aanrijding', 'Latitude': 52.31, 'Longitude': 5.71},
+                {'Dier': 'Wolf', 'Datum': '2026-09-18', 'Gebeurtenis': 'Dood aangetroffen', 'Latitude': 52.32, 'Longitude': 5.72},
+            ]},
+            'Aanval': {'columns': cols, 'rows': []},
+        }
+        self.verified()
+        sync.pdok_reverse = lambda lat, lon, d: {'name': 'Ermelo', 'lat': lat, 'lon': lon}
+        self.assertEqual(self.run_sync('--force'), 0)
+        _, wolf = self.places('wolven-data.js')
+        self.assertEqual(sorted((e['d'], e['ty']) for b in wolf for e in b['ev']),
+                          [('2026-09-18', 'dood'), ('2026-09-19', 'aanrijding'), ('2026-09-20', 'zichtmelding')])
 
     # ------------------------------------------------------------ omgewisselde coördinaten en mislukte opzoekingen
     def test_fix_coords(self):

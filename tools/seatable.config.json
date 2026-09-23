@@ -50,7 +50,8 @@
     ],
     "type": [
       "Type",
-      "Soort melding"
+      "Soort melding",
+      "Gebeurtenis"
     ],
     "regio": [
       "Regio"

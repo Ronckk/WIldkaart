@@ -17,9 +17,9 @@
   var MONTHS = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
   var TYPE_LABEL = {
     zichtmelding:'Zichtmelding', aanval:'Aanval op vee', jonkies:'Met jonkies gezien',
-    aanrijding:'Aanrijding', schurft:'Schurft', overig:'Overig'
+    aanrijding:'Aanrijding', dood:'Dood aangetroffen', schurft:'Schurft', overig:'Overig'
   };
-  // Alle typen die niet zicht/aanval/jonkies zijn (aanrijding, schurft, overig) tellen als "overig".
+  // Alle typen die niet zicht/aanval/jonkies zijn (aanrijding, dood, schurft, overig) tellen als "overig".
   var BUCKETS = ['zichtmelding','aanval','jonkies','overig'];
 
   var SCOPE = {

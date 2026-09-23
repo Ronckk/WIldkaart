@@ -177,6 +177,8 @@ def norm_type(v, default):
         return 'jonkies'
     if 'aanrij' in t:
         return 'aanrijding'
+    if 'dood' in t:
+        return 'dood'
     if 'schurft' in t:
         return 'schurft'
     return 'overig'
