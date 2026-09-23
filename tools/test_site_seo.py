@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BASE = 'https://wildkaart.rlode.nl/'
-INDEXABLE = {'index.html': '', 'wolven.html': 'wolven', 'zwijnen.html': 'zwijnen', 'overig.html': 'overig', 'over.html': 'over', 'melden.html': 'melden'}
+INDEXABLE = {'index.html': '', 'wolven.html': 'wolven', 'zwijnen.html': 'zwijnen', 'herten.html': 'herten', 'overig.html': 'overig', 'over.html': 'over', 'melden.html': 'melden'}
 
 
 def read(name):

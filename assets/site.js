@@ -79,7 +79,23 @@
       report:{ title:'Zwijn gezien?', types:['zichtmelding'],
         text:'Geef het door via het formulier. ' + REPORT_NOTE }
     },
-    // Alle andere dieren (hert, ree, vos, ...) op één pagina; elke melding onthoudt zelf welk dier het was (`diersoort`).
+    hert: {
+      key:'hert', label:'Hert', plural:'herten', mapName:'hertenkaart', meldingLabel:'Hertenmelding',
+      emoji:'🦌', color:'var(--species-hert)', page:'herten', dataVar:'HERTEN_DATA',
+      dominantOrder:['aanval','jonkies','zichtmelding'],
+      forecast:{
+        title:'Wanneer worden herten de komende weken waarschijnlijk gemeld?',
+        noticeIntro:'Dit is <b>geen voorspelling</b> van waar een hert zich laat zien &mdash; herten houden zich niet aan een agenda.',
+        activityPhrase:'waar het de laatste tijd het vaakst gemeld werd',
+        hotspotTypes:null, // alle soorten meldingen
+        hotspotHeading:'Waar wordt het nu het vaakst gemeld?',
+        hotspotNoun:'meldingen',
+        cta:'Weet je van een hertenmelding op de Veluwe? ' + formLink('zichtmelding', 'Geef ‘m door') + ', dan groeit deze kaart mee.'
+      },
+      report:{ title:'Hert gezien?', types:['zichtmelding'],
+        text:'Geef het door via het formulier. ' + REPORT_NOTE }
+    },
+    // Alle andere dieren (ree, vos, ...) op één pagina; elke melding onthoudt zelf welk dier het was (`diersoort`).
     andere: {
       key:'andere', label:'Overig', plural:'overige dieren', mapName:'kaart met overige dieren', meldingLabel:'Melding overig dier',
       emoji:'\uD83D\uDC3E', color:'var(--pal-5)', page:'overig', dataVar:'OVERIG_DATA',
@@ -94,10 +110,10 @@
         cta:'Ander dier gezien? ' + formLink('zichtmelding', 'Geef het door') + ', dan groeit deze kaart mee.'
       },
       report:{ title:'Ander dier gezien?', types:['zichtmelding'],
-        text:'Ree, hert, vos of een ander wild dier? Geef het door via het formulier. ' + REPORT_NOTE }
+        text:'Ree, vos of een ander wild dier? Geef het door via het formulier. ' + REPORT_NOTE }
     }
   };
-  var SPECIES_ORDER = ['wolf','zwijn','andere'];
+  var SPECIES_ORDER = ['wolf','zwijn','hert','andere'];
 
   // ---------------------------------------------------------------- tekst & datum
   function esc(s){

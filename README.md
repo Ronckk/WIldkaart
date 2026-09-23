@@ -5,11 +5,12 @@ Statisch, klaar om te hosten:
 - `index.html` — home (landelijke kaart met alle meldingen + meldingentabel)
 - `wolven.html` — wolvenmeldingen op de Veluwe
 - `zwijnen.html` — zwijnenmeldingen op de Veluwe
-- `overig.html` — meldingen van alle andere dieren (ree, hert, vos, ...), heel Nederland
+- `herten.html` — hertenmeldingen op de Veluwe
+- `overig.html` — meldingen van alle andere dieren (ree, vos, ...), heel Nederland
 - `over.html` — uitleg: wat is een melding, hoe controleren we, waar komen de gegevens vandaan, wat is een stip, privacy, contact
 - `404.html`, `robots.txt`, `sitemap.xml` — voor zoekmachines en foute adressen (zie "Vindbaarheid"; `sitemap.xml` wordt bij
   elke publicatie opnieuw gemaakt door `tools/build_sitemap.py`)
-- `data/wolven-data.js`, `data/zwijnen-data.js`, `data/overig-data.js` — de meldingendata (zie hieronder)
+- `data/wolven-data.js`, `data/zwijnen-data.js`, `data/herten-data.js`, `data/overig-data.js` — de meldingendata (zie hieronder)
 - `assets/map-tools.js` + `assets/map-tools.css` — filterbalk onder de zoekbalk van elke kaart (type, periode,
   tijdschuif met afspelen, hitte-laag) en de hitte-laag zelf (canvas, geen extra bibliotheek)
 - `tools/seatable_sync.py` (+ `seatable.config.json`) — haalt de meldingen uit SeaTable en schrijft `data/*.js` (zie onder)
@@ -40,9 +41,11 @@ Per plaats hoef je alleen `n`, `lat`, `lon` en de lijst gebeurtenissen `ev` (`{ 
 `assets/site.js` uit `ev` berekend. De oude velden `t`/`c`/`dom` worden niet meer gebruikt; wijken ze af van
 `ev`, dan waarschuwt de browserconsole daarvoor.
 
-**Een nieuwe diersoort** (bv. herten) = een databestand in hetzelfde formaat + één blok in `SPECIES`
-bovenin `assets/site.js` (naam, kleur, pagina, teksten voor de verwachting). De homepage pakt hem dan
-vanzelf mee (kaartlaag, vinkje, tabel, grafiek).
+**Een nieuwe diersoort** (bv. vossen) = een databestand in hetzelfde formaat + één blok in `SPECIES`
+bovenin `assets/site.js` (naam, kleur, pagina, teksten voor de verwachting) + een eigen pagina (kopieer een
+bestaande soortpagina, zoals hieronder gedaan voor herten) + de nieuwe soort in `tools/seatable.config.json`
+(`output`) en `norm_species` in `tools/seatable_sync.py`, zodat de sync 'm herkent en niet in Overig laat
+belanden. De homepage pakt hem dan vanzelf mee (kaartlaag, vinkje, tabel, grafiek).
 
 **Vergeet bij het toevoegen van een melding niet `updatedAt` bij te werken** (bovenaan hetzelfde
 databestand, formaat `"YYYY-MM-DDTHH:MM"`, lokale tijd). De homepage laat onder "Net binnen gekomen
@@ -85,7 +88,7 @@ heeft dan de site nu, weigert het script dat zonder `--force` (beveiliging tegen
 allereerste oude versie blijft bewaard in `tools/backup/`, de vorige versie steeds als `data/*.js.bak`.
 
 **Hoe een rij een stip wordt.** Verwachte kolommen (namen staan in `tools/seatable.config.json`, hoofdletters maken niet
-uit): `Dier` (Wolf/Zwijn), `Datum` (met of zonder tijd; tijdzone wordt naar Nederlandse tijd omgezet) en de plek: twee
+uit): `Dier` (Wolf/Zwijn/Hert/..., zie `norm_species` in `tools/seatable_sync.py`), `Datum` (met of zonder tijd; tijdzone wordt naar Nederlandse tijd omgezet) en de plek: twee
 getalkolommen `Latitude` en `Longitude` (die vult de kaartpagina in, zie "Meldformulieren") of, voor oudere rijen, een
 geolocatie-kolom `Locatie`. Staat er in een rij een breedte- en lengtegraad, dan gaat die voor; anders wordt `Locatie`
 gelezen. Ook `52,29`, `52.29°` en `52.29 N` worden begrepen. Bij `Aanval` ook `Gedode dier` en `Aantal dood`. De tabel bepaalt het type (zichtmelding of aanval); een
@@ -150,7 +153,7 @@ De pagina is gewone statische HTML/JS (`melden.html`, `assets/melden.js`, `asset
 dat naar SeaTable schrijft. De plek reist mee in het adres van het formulier
 (`.../forms/<id>/?prefill_Latitude=52.2913&prefill_Longitude=5.7189`); de plaatsnaam bij de pin komt (in de browser van de
 bezoeker) van PDOK. De adressen van de formulieren, de pagina-adressen en de namen van de kolommen die worden ingevuld staan
-op één plek: `FORMS` en `PREFILL` bovenin `assets/site.js`. De knoppen op de homepage, de wolven- en zwijnenpagina en de
+op één plek: `FORMS` en `PREFILL` bovenin `assets/site.js`. De knoppen op de homepage, de soortpagina's en de
 links in de voettekst wijzen naar `/melden?type=zichtmelding` of `?type=aanval`.
 
 **Eenmalig in SeaTable (per tabel, dus `Zichtmeldingen` én `Aanval`):**
@@ -239,7 +242,7 @@ plaatsnamen) staan per pagina in `PAGES` in het script.
 Onder de zoekbalk van elke kaart staat een inklapbaar paneel "Filter & tijd" (open op een computer, dicht op een
 telefoon; ingeklapt zie je alleen een "actief"-label en het aantal meldingen). Het bevat: **type** (zicht / aanval / jonkies / overig; alleen typen
 die in de data voorkomen), **periode** (van/tot), een **tijdschuif** per maand met een afspeelknop (met de optie
-"opgebouwd" = alles t/m die maand) en — alleen op de wolven- en zwijnenpagina, niet op de homepage — een
+"opgebouwd" = alles t/m die maand) en — op alle soortpagina's (wolven, zwijnen, herten, overig), niet op de homepage — een
 **hitte-laag** onder de bolletjes. Op de homepage staat in hetzelfde paneel ook de **soort** (wolf/zwijn); de legenda onder de kaart is alleen nog de kleurcode. De hele stand staat in de URL, dus je kunt een weergave delen ("Kopieer link"):
 
     ?soort=wolf&type=aanval,zichtmelding&van=2026-05&tot=2026-08&heat=1
@@ -257,11 +260,11 @@ data (JSON-LD) en de paar regels die de pagina aan een diersoort koppelen (`WDK.
 
 | Bestand | Voor |
 | --- | --- |
-| `assets/species.css` | wolven-, zwijnen- en overig-pagina |
+| `assets/species.css` | wolven-, zwijnen-, herten- en overig-pagina |
 | `assets/home.css` | homepage |
 | `assets/text.css` | `over.html` en `404.html` |
 | `assets/shell.css`, `assets/map-tools.css` | menubalk en voettekst; filterbalk en hitte-laag (op alle pagina's) |
-| `assets/wolven-page.js`, `zwijnen-page.js`, `overig-page.js` | de kaart, statistieken en verwachting van die pagina |
+| `assets/wolven-page.js`, `zwijnen-page.js`, `herten-page.js`, `overig-page.js` | de kaart, statistieken en verwachting van die pagina |
 | `assets/home-map.js`, `assets/home-stats.js` | homepage: de landelijke kaart, dan tabel, grafiek en filters |
 | `assets/theme.js`, `assets/back-to-top.js` | licht/donker-knop (alle pagina's); knop "Naar boven" (wolvenpagina) |
 | `assets/fonts/` | lettertypen Fraunces, IBM Plex Sans en Plex Mono (alleen de subsets `latin` en `latin-ext`), zelf gehost |

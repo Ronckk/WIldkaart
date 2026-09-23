@@ -217,8 +217,9 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(sync.norm_type('', 'aanval'), 'aanval')
         self.assertEqual(sync.norm_species('Wolven', 'wolf', {'wolf', 'zwijn'}), 'wolf')
         self.assertEqual(sync.norm_species('Wild zwijn', 'wolf', {'wolf', 'zwijn'}), 'zwijn')
-        self.assertIsNone(sync.norm_species('Hert', 'wolf', {'wolf', 'zwijn'}))                  # zonder vangnet: onbekend
-        self.assertEqual(sync.norm_species('Hert', 'wolf', {'wolf', 'zwijn', 'andere'}, 'andere'), 'andere')
+        self.assertEqual(sync.norm_species('Edelhert', 'wolf', {'wolf', 'zwijn', 'hert'}), 'hert')
+        self.assertIsNone(sync.norm_species('Ree', 'wolf', {'wolf', 'zwijn'}))                   # zonder vangnet: onbekend
+        self.assertEqual(sync.norm_species('Ree', 'wolf', {'wolf', 'zwijn', 'andere'}, 'andere'), 'andere')
         self.assertEqual(sync.norm_species('Wolf', 'wolf', {'wolf', 'zwijn', 'andere'}, 'andere'), 'wolf')
 
     # ------------------------------------------------------------ jouw echte tabelindeling (Dier / Datum / Locatie ...)
@@ -500,6 +501,27 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(evs, [('2026-09-02', 'Ree', 'zichtmelding'), ('2026-09-03', 'Vos', 'zichtmelding')])   # Hert wacht op verificatie
         self.assertEqual(data['updatedAt'][:4], '2026')
         self.assertNotIn('diersoort', [k for b in wolf for e in b['ev'] for k in e])     # alleen op de Overig-pagina
+
+    # ------------------------------------------------------------ herten hebben een eigen pagina (net als wolf en zwijn)
+    def test_hert_gets_its_own_page_and_does_not_land_in_overig(self):
+        loc = lambda lat, lng: {'lat': lat, 'lng': lng}
+        Mock.tables = {
+            'Zichtmeldingen': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), ('Verificatie', 'checkbox')],
+                               'rows': [
+                                   {'Dier': 'Edelhert', 'Datum': '2026-09-05', 'Locatie': loc(52.2, 5.8), 'Verificatie': True},
+                                   {'Dier': 'Hert met jonkies', 'Datum': '2026-09-06', 'Locatie': loc(52.2, 5.8), 'Verificatie': True},
+                                   {'Dier': 'Ree', 'Datum': '2026-09-07', 'Locatie': loc(52.2, 5.8), 'Verificatie': True},   # blijft "andere"
+                               ]},
+            'Aanval': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), ('Verificatie', 'checkbox')], 'rows': []},
+        }
+        sync.pdok_reverse = lambda lat, lon, d: {'name': 'Teststad', 'lat': lat, 'lon': lon}
+        self.assertEqual(self.run_sync('--force'), 0)
+        _, hert = self.places('herten-data.js')
+        self.assertEqual(sorted((e['d'], e['ty']) for b in hert for e in b['ev']),
+                          [('2026-09-05', 'zichtmelding'), ('2026-09-06', 'jonkies')])
+        self.assertNotIn('diersoort', [k for b in hert for e in b['ev'] for k in e])     # hert heeft een eigen pagina, geen `diersoort`
+        _, other = self.places('overig-data.js')
+        self.assertEqual([e.get('diersoort') for b in other for e in b['ev']], ['Ree'])
 
 
     # ------------------------------------------------------------ coördinaten uit de kaartpagina (vooraf ingevulde tekstkolommen)

@@ -26,13 +26,14 @@ PAGES = {
     'index.html':   {'active': 'home',    'notes': []},
     'wolven.html':  {'active': 'wolven',  'notes': ['<div>Klopt er iets niet? Laat het ons weten via <a href="over#contact">Over deze site</a>.</div>']},
     'zwijnen.html': {'active': 'zwijnen', 'notes': ['<div>%s</div>' % PLACE_NOTE]},
+    'herten.html':  {'active': 'herten',  'notes': ['<div>%s</div>' % PLACE_NOTE]},
     'overig.html':  {'active': 'overig',  'notes': ['<div>%s</div>' % PLACE_NOTE]},
     'over.html':    {'active': None,      'notes': []},
     '404.html':     {'active': None,      'notes': []},
     'melden.html':  {'active': None,      'notes': []},
 }
 
-MENU = [('home', 'Home', './'), ('wolven', 'Wolven', 'wolven'), ('zwijnen', 'Zwijnen', 'zwijnen')]
+MENU = [('home', 'Home', './'), ('wolven', 'Wolven', 'wolven'), ('zwijnen', 'Zwijnen', 'zwijnen'), ('herten', 'Herten', 'herten')]
 
 
 def nav_html(active):
@@ -41,7 +42,6 @@ def nav_html(active):
             return '<button type="button" class="nav-link active" aria-current="page">%s</button>' % label
         return '<a href="%s" class="nav-link">%s</a>' % (href, label)
     links = [item(*m) for m in MENU]
-    links.append('<button type="button" class="nav-link is-soon" disabled title="Binnenkort beschikbaar &mdash; we verzamelen nog data">Herten <span class="soon-tag">binnenkort</span></button>')
     links.append(item('overig', 'Overig', 'overig'))
     return '''<header class="site-header"><div class="site-header-inner">
   <nav class="navbar" aria-label="Hoofdmenu">
@@ -64,7 +64,7 @@ def footer_html(notes):
     <div class="footer-cols">
       <div class="footer-col footer-brand">
         <p class="fb-name">Wilde Dieren in Kaart</p>
-        <p>Gecontroleerde meldingen van wolven, zwijnen en andere wilde dieren in Nederland.</p>
+        <p>Gecontroleerde meldingen van wolven, zwijnen, herten en andere wilde dieren in Nederland.</p>
       </div>
       <nav class="footer-col" aria-label="Kaarten">
         <h2>Kaarten</h2>
@@ -72,6 +72,7 @@ def footer_html(notes):
           <li><a href="./">Home</a></li>
           <li><a href="wolven">Wolven</a></li>
           <li><a href="zwijnen">Zwijnen</a></li>
+          <li><a href="herten">Herten</a></li>
           <li><a href="overig">Overig</a></li>
         </ul>
       </nav>

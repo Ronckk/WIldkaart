@@ -26,6 +26,7 @@
     --pal-6:#008300;
     --pal-7:#4a3aa7;
     --species-zwijn:#9c5a26;
+    --species-hert:#6b7a33;
     --shadow: 0 1px 2px rgba(21,32,24,.06), 0 8px 24px -12px rgba(21,32,24,.18);
   }
   @media (prefers-color-scheme: dark){
@@ -56,6 +57,7 @@
       --pal-6:#008300;
       --pal-7:#9085e9;
     --species-zwijn:#c07f3f;
+      --species-hert:#a3b568;
       --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px -12px rgba(0,0,0,.55);
     }
   }
@@ -86,6 +88,7 @@
     --pal-6:#008300;
     --pal-7:#9085e9;
     --species-zwijn:#c07f3f;
+    --species-hert:#a3b568;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px -12px rgba(0,0,0,.55);
   }
 

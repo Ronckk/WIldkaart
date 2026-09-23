@@ -195,7 +195,7 @@ def strip_young(name):
 
 
 def norm_species(v, default, allowed, catch_all=None):
-    """Wolf en zwijn hebben een eigen pagina; elk ander dier (hert, ree, vos, ...) gaat naar `catch_all` (de pagina Overig)."""
+    """Wolf, zwijn en hert hebben een eigen pagina; elk ander dier (ree, vos, ...) gaat naar `catch_all` (de pagina Overig)."""
     t = norm(as_text(v))
     if not t:
         return default
@@ -203,6 +203,8 @@ def norm_species(v, default, allowed, catch_all=None):
         key = 'wolf'
     elif 'zwijn' in t:
         key = 'zwijn'
+    elif 'hert' in t:
+        key = 'hert'
     else:
         key = catch_all
     return key if key in allowed else None
@@ -667,6 +669,7 @@ STAT_TYPE_LABEL = {
 STAT_SPECIES = {
     'wolf': {'label': 'Wolf', 'emoji': '\U0001F43A', 'page': 'wolven'},
     'zwijn': {'label': 'Zwijn', 'emoji': '\U0001F417', 'page': 'zwijnen'},
+    'hert': {'label': 'Hert', 'emoji': '\U0001F98C', 'page': 'herten'},
     'andere': {'label': 'Overig', 'emoji': '\U0001F43E', 'page': 'overig'},
 }
 EXACT_SUFFIX_RE = re.compile(r' \(exacte locatie\)$')
@@ -840,6 +843,7 @@ def render_static_content(root, warn=None):
     data = {
         'wolf': load_data_file(root / 'data' / 'wolven-data.js'),
         'zwijn': load_data_file(root / 'data' / 'zwijnen-data.js'),
+        'hert': load_data_file(root / 'data' / 'herten-data.js'),
         'andere': load_data_file(root / 'data' / 'overig-data.js'),
     }
     changed = []
@@ -847,6 +851,8 @@ def render_static_content(root, warn=None):
         changed.append('wolven.html')
     if render_species_page(root, 'zwijnen.html', data['zwijn'], ('jonkies', 'Met jonkies'), ('de Veluwe', False), warn):
         changed.append('zwijnen.html')
+    if render_species_page(root, 'herten.html', data['hert'], ('jonkies', 'Met jonkies'), ('de Veluwe', False), warn):
+        changed.append('herten.html')
     if render_species_page(root, 'overig.html', data['andere'], ('jonkies', 'Met jonkies'), None, warn):
         changed.append('overig.html')
     if render_home_page(root, data, warn):

@@ -24,9 +24,10 @@ BASE = 'https://wildkaart.rlode.nl/'
 
 # (pad, pagina, databestanden waar de pagina van afhangt)
 PAGES = [
-    ('',        'index.html',   ['data/wolven-data.js', 'data/zwijnen-data.js', 'data/overig-data.js']),
+    ('',        'index.html',   ['data/wolven-data.js', 'data/zwijnen-data.js', 'data/herten-data.js', 'data/overig-data.js']),
     ('wolven',  'wolven.html',  ['data/wolven-data.js']),
     ('zwijnen', 'zwijnen.html', ['data/zwijnen-data.js']),
+    ('herten',  'herten.html',  ['data/herten-data.js']),
     ('overig',  'overig.html',  ['data/overig-data.js']),
     ('over',    'over.html',    []),
     ('melden',  'melden.html',  []),

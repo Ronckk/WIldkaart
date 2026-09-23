@@ -122,6 +122,10 @@
       "file": "data/zwijnen-data.js",
       "var": "ZWIJNEN_DATA"
     },
+    "hert": {
+      "file": "data/herten-data.js",
+      "var": "HERTEN_DATA"
+    },
     "andere": {
       "file": "data/overig-data.js",
       "var": "OVERIG_DATA"
