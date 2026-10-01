@@ -159,17 +159,14 @@ class SeoTest(unittest.TestCase):
 
 
     def test_pages_load_fonts_and_leaflet_from_the_site_itself(self):
-        """Privacy en snelheid: geen verbinding met Google Fonts of unpkg; alleen de kaarttegels komen van een externe dienst."""
+        """Privacy en snelheid: geen verbinding met Google Fonts of unpkg; alleen de kaarttegels komen van een externe dienst.
+        Het lettertype is Arial (systeemfont, geen eigen bestanden of @font-face nodig)."""
         for page in list(INDEXABLE) + ['404.html']:
             s = read(page)
             with self.subTest(page=page):
                 for host in ('fonts.googleapis.com', 'fonts.gstatic.com', 'unpkg.com'):
                     self.assertNotIn(host, s)
-                self.assertIn('href="assets/fonts/fonts.css"', s)
-        fonts = read('assets/fonts/fonts.css')
-        for f in re.findall(r'url\(([^)]+\.woff2)\)', fonts):
-            self.assertTrue((ROOT / 'assets' / 'fonts' / f).exists(), f)
-        self.assertNotIn('http', re.sub(r'/\*.*?\*/', '', fonts, flags=re.S))
+                self.assertNotIn('assets/fonts', s)                          # geen eigen lettertype-bestanden meer nodig
         for page in ('index.html', 'wolven.html', 'zwijnen.html', 'overig.html'):
             s = read(page)
             self.assertIn('src="assets/vendor/leaflet/leaflet.js"', s, page)

@@ -16,8 +16,8 @@ Statisch, klaar om te hosten:
 - `tools/seatable_sync.py` (+ `seatable.config.json`) — haalt de meldingen uit SeaTable en schrijft `data/*.js` (zie onder)
 - `assets/site.js` — de gedeelde data-laag: berekent alles uit de meldingen (tellingen, statistieken,
   "laatste 2 weken", weekverwachting, hotspots, weetjes, grafiek per maand) voor elke diersoort
-- Opmaak en scripts per pagina (zie "Opmaak en scripts" hieronder), `assets/fonts/` (lettertypen) en `assets/vendor/leaflet/`
-  (de kaartbibliotheek): alles wat de pagina's nodig hebben staat op de site zelf
+- Opmaak en scripts per pagina (zie "Opmaak en scripts" hieronder) en `assets/vendor/leaflet/` (de kaartbibliotheek):
+  alles wat de pagina's nodig hebben staat op de site zelf. Het lettertype is Arial (systeemfont, geen eigen bestanden nodig).
 
 ## Data: één bron, meerdere kaarten
 
@@ -271,16 +271,15 @@ data (JSON-LD) en de paar regels die de pagina aan een diersoort koppelen (`WDK.
 | `assets/wolven-page.js`, `zwijnen-page.js`, `herten-page.js`, `overig-page.js` | de kaart, statistieken en verwachting van die pagina |
 | `assets/home-map.js`, `assets/home-stats.js` | homepage: de landelijke kaart, dan tabel, grafiek en filters |
 | `assets/theme.js`, `assets/back-to-top.js` | licht/donker-knop (alle pagina's); knop "Naar boven" (wolvenpagina) |
-| `assets/fonts/` | lettertypen Fraunces, IBM Plex Sans en Plex Mono (alleen de subsets `latin` en `latin-ext`), zelf gehost |
 
 Een wijziging in een pagina-eigen script of stijlblad werkt voor iedereen pas als hun browser het bestand opnieuw ophaalt
 (GitHub Pages laat de browser bestanden ~10 minuten bewaren). De data-scripts krijgen daarom een versienummer (zie boven),
 de bestanden in `assets/` niet. Een paginascript rekent op wat eerder wordt geladen: eerst de data, dan `site.js`, Leaflet en
 `map-tools.js`, en pas daarna het paginascript; houd die volgorde aan als je een script toevoegt.
 
-**Lettertypen** komen niet meer van Google Fonts. `assets/fonts/fonts.css` verwijst naar `.woff2`-bestanden in dezelfde map
-(Google Fonts, SIL Open Font License). Nog een gewicht of stijl nodig? Haal het bestand op bij Google Fonts, zet het in
-die map en voeg een `@font-face` toe aan `fonts.css`. `test_site_seo.py` faalt als een pagina weer naar Google Fonts of unpkg linkt.
+**Lettertype:** Arial (`font-family:Arial, Helvetica, sans-serif` in alle stijlbladen) — een systeemfont, dus geen eigen
+`.woff2`-bestanden, `@font-face` of verbinding met Google Fonts meer nodig (dat was eerder wel zo; zie de git-geschiedenis
+als je dat terug wilt). `test_site_seo.py` faalt nog steeds als een pagina naar Google Fonts of unpkg linkt.
 
 ## De kaart
 

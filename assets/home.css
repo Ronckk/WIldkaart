@@ -96,7 +96,7 @@
   body{
     background:var(--bg);
     color:var(--ink);
-    font-family:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family:Arial, Helvetica, sans-serif;
   }
   .page{
     max-width:980px;
@@ -125,7 +125,7 @@
     border:none;
     background:transparent;
     font:inherit;
-    font-family:"IBM Plex Sans", sans-serif;
+    font-family:Arial, Helvetica, sans-serif;
     font-weight:600;
     font-size:13.5px;
     color:var(--ink-2);
@@ -142,7 +142,7 @@
   .nav-link:not(.is-soon):not(.active):hover{ background:var(--tab-bg); }
   .nav-link.is-soon{ color:var(--muted); cursor:default; opacity:.75; }
   .nav-link .soon-tag{
-    font-family:"IBM Plex Mono", monospace;
+    font-family:Arial, Helvetica, sans-serif;
     font-size:9px;
     font-weight:600;
     text-transform:uppercase;
@@ -192,7 +192,7 @@
 
   .hero{ display:flex; flex-direction:column; gap:8px; }
   .eyebrow{
-    font-family:"IBM Plex Mono", monospace;
+    font-family:Arial, Helvetica, sans-serif;
     font-size:12px;
     letter-spacing:.09em;
     text-transform:uppercase;
@@ -200,7 +200,7 @@
     margin:0;
   }
   h1{
-    font-family:"Fraunces", Georgia, serif;
+    font-family:Arial, Helvetica, sans-serif;
     font-weight:600;
     font-size:clamp(28px, 5vw, 42px);
     line-height:1.08;
@@ -228,7 +228,7 @@
   .search-input{
     width:100%;
     font:inherit;
-    font-family:"IBM Plex Sans", sans-serif;
+    font-family:Arial, Helvetica, sans-serif;
     font-size:16px;
     padding:12px 14px;
     border-radius:10px;
@@ -297,7 +297,7 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    font-family:"IBM Plex Sans", sans-serif;
+    font-family:Arial, Helvetica, sans-serif;
   }
   .zoom-controls button:hover{ background:var(--tab-bg); }
   .zoom-controls button:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
@@ -323,7 +323,7 @@
 
   .chart-wrap{ width:100%; height:200px; }
   .chart-wrap svg{ width:100%; height:100%; display:block; overflow:visible; }
-  .chart-wrap text{ fill:var(--ink-2); font-family:"IBM Plex Mono", monospace; }
+  .chart-wrap text{ fill:var(--ink-2); font-family:Arial, Helvetica, sans-serif; }
   .chart-wrap .chart-bar{ transition:opacity .15s; }
   .chart-wrap .chart-bar:hover{ opacity:.8; }
 
@@ -338,7 +338,7 @@
     gap:14px;
   }
   .card-title{
-    font-family:"Fraunces", Georgia, serif;
+    font-family:Arial, Helvetica, sans-serif;
     font-weight:600;
     font-size:19px;
     margin:0;
@@ -347,7 +347,7 @@
   .map-wrap{ height:460px; }
   @media (max-width:640px){ .map-wrap{ height:360px; } }
   #nlMap{ width:100%; height:100%; background:var(--water); }
-  .leaflet-container{ position:relative; z-index:0; font-family:"IBM Plex Sans", sans-serif; background:var(--water); }
+  .leaflet-container{ position:relative; z-index:0; font-family:Arial, Helvetica, sans-serif; background:var(--water); }
   .leaflet-control-attribution{ font-size:10px; background:rgba(255,255,255,.75); }
   .leaflet-control-zoom{ display:none; }
   .leaflet-popup-content-wrapper{
@@ -360,10 +360,10 @@
   .leaflet-popup-tip{ background:var(--ink); }
   .leaflet-popup-close-button{ color:var(--bg) !important; opacity:.7; }
   .leaflet-popup-close-button:hover{ opacity:1; }
-  .tt-name{ font-family:"IBM Plex Sans", sans-serif; font-weight:700; font-size:13.5px; margin-bottom:3px; }
+  .tt-name{ font-family:Arial, Helvetica, sans-serif; font-weight:700; font-size:13.5px; margin-bottom:3px; }
   .exact-badge{ color:var(--muted); font-weight:700; margin-left:4px; font-size:.85em; }
-  .tt-row{ display:flex; justify-content:space-between; gap:10px; font-family:"IBM Plex Mono", monospace; font-size:11px; font-weight:500; opacity:.92; }
-  .tt-dates{ margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.18); font-family:"IBM Plex Mono", monospace; font-size:10.5px; font-weight:500; opacity:.85; }
+  .tt-row{ display:flex; justify-content:space-between; gap:10px; font-family:Arial, Helvetica, sans-serif; font-size:11px; font-weight:500; opacity:.92; }
+  .tt-dates{ margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.18); font-family:Arial, Helvetica, sans-serif; font-size:10.5px; font-weight:500; opacity:.85; }
   .tt-dates div.date-row{ white-space:nowrap; }
   .tt-dates a{ color:var(--bg); }
 
@@ -386,7 +386,7 @@
     padding:10px 12px;
   }
   .sub-h{
-    font-family:"IBM Plex Sans", sans-serif;
+    font-family:Arial, Helvetica, sans-serif;
     font-weight:600;
     font-size:13.5px;
     color:var(--ink);
@@ -409,7 +409,7 @@
     text-align:center;
   }
   .week-range{
-    font-family:"IBM Plex Mono", monospace;
+    font-family:Arial, Helvetica, sans-serif;
     font-size:10.5px;
     color:var(--ink-2);
     line-height:1.3;
@@ -436,7 +436,7 @@
     color:var(--ink);
   }
   .hotspot-chip .hc-n{
-    font-family:"IBM Plex Mono", monospace;
+    font-family:Arial, Helvetica, sans-serif;
     font-size:11px;
     font-weight:600;
     color:var(--s-aanval);
@@ -479,7 +479,7 @@
     border-bottom:1px solid var(--border);
   }
   table.report-table th{
-    font-family:"IBM Plex Mono", monospace;
+    font-family:Arial, Helvetica, sans-serif;
     font-size:10.5px;
     text-transform:uppercase;
     letter-spacing:.04em;
@@ -517,7 +517,7 @@
     }
     table.report-table td::before{
       content: attr(data-label);
-      font-family:"IBM Plex Mono", monospace;
+      font-family:Arial, Helvetica, sans-serif;
       font-size:10px;
       text-transform:uppercase;
       letter-spacing:.04em;

@@ -40,7 +40,7 @@
 .wdk-panel[open] > .wdk-head::before{ transform:rotate(45deg); }
 .wdk-title{ font-weight:600; font-size:13.5px; color:var(--ink); white-space:nowrap; }
 .wdk-badge{
-  font-family:"IBM Plex Mono", monospace;
+  font-family:Arial, Helvetica, sans-serif;
   font-size:9.5px;
   font-weight:600;
   text-transform:uppercase;
@@ -57,7 +57,7 @@
 .wdk-body{ display:flex; flex-direction:column; gap:10px; margin-top:12px; }
 .wdk-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }
 .wdk-label{
-  font-family:"IBM Plex Mono", monospace;
+  font-family:Arial, Helvetica, sans-serif;
   font-size:10.5px;
   text-transform:uppercase;
   letter-spacing:.04em;
@@ -70,7 +70,7 @@
   background:var(--surface);
   color:var(--ink);
   font:inherit;
-  font-family:"IBM Plex Sans", sans-serif;
+  font-family:Arial, Helvetica, sans-serif;
   font-size:12.5px;
   padding:5px 12px 5px 10px;
   border-radius:99px;
@@ -92,7 +92,7 @@
 .wdk-check input{ accent-color:var(--ink); margin:0; cursor:pointer; }
 .wdk-date{
   font:inherit;
-  font-family:"IBM Plex Sans", sans-serif;
+  font-family:Arial, Helvetica, sans-serif;
   font-size:13px;
   padding:5px 8px;
   border:1px solid var(--border-strong);
@@ -106,7 +106,7 @@
   background:var(--surface);
   color:var(--ink);
   font:inherit;
-  font-family:"IBM Plex Sans", sans-serif;
+  font-family:Arial, Helvetica, sans-serif;
   font-size:12.5px;
   font-weight:600;
   padding:5px 12px;
@@ -135,7 +135,7 @@
 .wdk-slider{ flex:1 1 160px; min-width:120px; accent-color:var(--accent); cursor:pointer; }
 .wdk-month{
   min-width:92px;
-  font-family:"IBM Plex Mono", monospace;
+  font-family:Arial, Helvetica, sans-serif;
   font-size:12px;
   font-weight:500;
   color:var(--ink);
@@ -162,7 +162,7 @@
   border:1px solid var(--border-strong);
   background:var(--surface);
   color:var(--ink);
-  font-family:"IBM Plex Sans", sans-serif;
+  font-family:Arial, Helvetica, sans-serif;
   font-size:14px;
   font-weight:600;
   text-decoration:none;
@@ -196,7 +196,7 @@
   border:2px solid var(--map-surface);
   background:var(--c);
   color:#fff;
-  font-family:"IBM Plex Mono", monospace;
+  font-family:Arial, Helvetica, sans-serif;
   font-weight:600;
   font-size:13px;
   text-shadow:0 1px 2px rgba(0,0,0,.55);

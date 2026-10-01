@@ -25,7 +25,7 @@ button.rc-btn{ appearance:none; cursor:pointer; }
 .mp-foot{ align-items:baseline; }
 .mp-picked{ margin:0; flex:1 1 280px; font-size:13px; line-height:1.5; color:var(--ink-2); }
 .mp-place{ color:var(--ink); }
-.mp-coords{ font-family:"IBM Plex Mono", monospace; font-size:11.5px; color:var(--muted); white-space:nowrap; }
+.mp-coords{ font-family:Arial, Helvetica, sans-serif; font-size:11.5px; color:var(--muted); white-space:nowrap; }
 .mp-warn{ color:var(--s-aanval); font-weight:600; }
 .mp-link{
   appearance:none;
