@@ -757,16 +757,19 @@ def stat_set(html, name, inner, warn):
     return new
 
 
-def render_species_page(root, filename, data, third, note_where, warn, since_tab=False):
+def render_species_page(root, filename, data, third, note_where, warn, since_tab=False, nationwide=False):
     """data = het ingelezen data/<soort>-data.js. third = (key, label) voor de derde statistiektegel. note_where =
-    (waar, met_aanvallen) voor de #statsNote-tekst, of None als de pagina die niet heeft (overig.html). since_tab: alleen
-    wolven.html heeft het tabblad "Sinds <maand jaar>"."""
+    (waar, met_aanvallen) voor de #statsNote-tekst, of None als de pagina die niet heeft (overig.html, en sinds de
+    wolf landelijk telt ook wolven.html niet meer). since_tab: alleen wolven.html heeft het tabblad "Sinds <maand jaar>".
+    nationwide: de pagina telt `veluwe.all` + `overig` samen (wolven.html, overig.html) in plaats van alleen de Veluwe
+    (zwijnen.html, herten.html) - moet overeenkomen met DATA.all in de bijbehorende assets/*-page.js."""
     path = root / filename
     if not path.exists() or not data:
         return False
     html = original = path.read_text(encoding='utf-8')
     veluwe = (data.get('veluwe') or {}).get('all', [])
-    s = stat_compute(veluwe)
+    places = veluwe + list(data.get('overig') or []) if nationwide else veluwe
+    s = stat_compute(places)
     html = stat_set(html, 'tiles', stat_tiles_html(s, third[0], third[1]), warn)
     if since_tab and s['dateMin']:
         html = stat_set(html, 'since', 'Sinds ' + stat_month_year(s['dateMin']), warn)
@@ -847,13 +850,13 @@ def render_static_content(root, warn=None):
         'andere': load_data_file(root / 'data' / 'overig-data.js'),
     }
     changed = []
-    if render_species_page(root, 'wolven.html', data['wolf'], ('aanval', 'Aanvallen op vee'), ('de Veluwe', True), warn, since_tab=True):
+    if render_species_page(root, 'wolven.html', data['wolf'], ('aanval', 'Aanvallen op vee'), None, warn, since_tab=True, nationwide=True):
         changed.append('wolven.html')
     if render_species_page(root, 'zwijnen.html', data['zwijn'], ('jonkies', 'Met jonkies'), ('de Veluwe', False), warn):
         changed.append('zwijnen.html')
     if render_species_page(root, 'herten.html', data['hert'], ('jonkies', 'Met jonkies'), ('de Veluwe', False), warn):
         changed.append('herten.html')
-    if render_species_page(root, 'overig.html', data['andere'], ('jonkies', 'Met jonkies'), None, warn):
+    if render_species_page(root, 'overig.html', data['andere'], ('jonkies', 'Met jonkies'), None, warn, nationwide=True):
         changed.append('overig.html')
     if render_home_page(root, data, warn):
         changed.append('index.html')

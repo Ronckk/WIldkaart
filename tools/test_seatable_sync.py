@@ -724,7 +724,7 @@ class SyncTest(unittest.TestCase):
         self.real_layout()
         self.assertEqual(self.run_sync('--force'), 0)
         data = sync.load_data_file(self.tmp / 'data' / 'wolven-data.js')
-        expected = sync.stat_compute(data['veluwe']['all'])
+        expected = sync.stat_compute(data['veluwe']['all'] + data['overig'])          # wolven.html telt heel Nederland
 
         wolven_html = (self.tmp / 'wolven.html').read_text(encoding='utf-8')
         self.assertIn('<!-- stat:tiles --><div class="stat"><div class="n">%d</div>' % expected['total'], wolven_html)
@@ -743,6 +743,26 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(self.run_sync('--force'), 0)
         after = (self.tmp / 'wolven.html').read_text(encoding='utf-8'), (self.tmp / 'index.html').read_text(encoding='utf-8')
         self.assertEqual(before, after)
+
+    def test_wolf_tiles_count_the_whole_country_not_just_the_veluwe(self):
+        # wolven.html telt (anders dan zwijnen/herten) heel Nederland, inclusief meldingen ver buiten de Veluwe-bbox.
+        loc = lambda lat, lng: {'lat': lat, 'lng': lng}
+        Mock.tables = {
+            'Zichtmeldingen': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), ('Verificatie', 'checkbox')],
+                               'rows': [
+                                   {'Dier': 'Wolf', 'Datum': '2026-09-10', 'Locatie': loc(52.2, 5.8), 'Verificatie': True},    # op de Veluwe
+                                   {'Dier': 'Wolf', 'Datum': '2026-09-11', 'Locatie': loc(52.37, 4.90), 'Verificatie': True},  # Amsterdam: ver buiten
+                               ]},
+            'Aanval': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), ('Verificatie', 'checkbox')], 'rows': []},
+        }
+        sync.pdok_reverse = lambda lat, lon, d: {'name': 'Teststad', 'lat': lat, 'lon': lon}
+        self.assertEqual(self.run_sync('--force'), 0)
+        data, wolf = self.places('wolven-data.js')
+        self.assertEqual(len(data['veluwe']['all']), 1)
+        self.assertEqual(len(data['overig']), 1)
+        wolven_html = (self.tmp / 'wolven.html').read_text(encoding='utf-8')
+        self.assertIn('<!-- stat:tiles --><div class="stat"><div class="n">2</div>', wolven_html)   # beide meldingen meegeteld
+        self.assertNotIn('id="statsNote"', wolven_html)                                              # geen "Daarbuiten"-tekst meer (net als overig.html)
 
     def test_stamp_command_also_refreshes_static_content_without_a_token(self):
         self.real_layout()

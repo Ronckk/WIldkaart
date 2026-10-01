@@ -1,10 +1,13 @@
 // Wolvenpagina (wolven.html): kaart, statistieken, verwachting en hotspots; de cijfers komen uit assets/site.js (WDK).
+// Anders dan zwijnen/herten telt deze pagina heel Nederland (DATA.all = LOADED.all, niet LOADED.veluwe): een wolf houdt
+// zich niet aan de grens van de Veluwe, en zwerft ook door Drenthe, Utrecht, Brabant, ... Zie ook de vergelijkbare
+// keuze op overig.html (WDK.load('andere')).
 (function(){
   // De plaatsen worden in assets/site.js uit de gebeurtenissen (`ev`) berekend. Type, periode, tijdschuif en
   // hitte-laag komen uit de filterbalk (assets/map-tools.js); de tabbladen zijn snelkeuzes voor de periode.
   var RECENT_DAYS = 14;
   var LOADED = WDK.load('wolf');
-  var DATA = { all: LOADED.veluwe };
+  var DATA = { all: LOADED.all };
   document.querySelector('.tab[data-set="all"]').textContent = 'Sinds ' + WDK.monthYear(WDK.stats(DATA.all).dateMin);
   document.querySelector('.tab[data-set="last2w"]').textContent = 'Laatste 2 weken (' + WDK.recentLabel(RECENT_DAYS) + ')';
 
@@ -17,7 +20,8 @@
   var stripExact = WDK.stripExact, nameHtml = WDK.nameHtml;
 
   // ---- echte kaart (Leaflet + OpenStreetMap; tegels, licht/donker en zoomknoppen: assets/map-base.js) ----
-  var INITIAL_CENTER = [52.24, 5.85], INITIAL_ZOOM = 10;
+  // heel Nederland in beeld (zelfde beginstand als de landelijke kaart op de homepage en overig.html), niet alleen de Veluwe
+  var INITIAL_CENTER = [52.18, 5.30], INITIAL_ZOOM = 7;
   var map = WDK.baseMap('map', { center:INITIAL_CENTER, zoom:INITIAL_ZOOM });
 
   var CL = WDK.clusterLayer(map);
@@ -40,7 +44,6 @@
     var pm = WDK.placeMarkers(rows, { color:function(b){ return COLORS[b.dom]; }, popup:popupHtml });
     CL.setItems(pm.items, { halo: pm.latestId }); // dicht bij elkaar (binnen 5 km): één cluster met het aantal meldingen
     var s = renderStats(rows);
-    WDK.renderScopeNote(document.getElementById('statsNote'), { rows:LOADED.overig, key:'wolf', filter:f, where:'de Veluwe', attacks:true });
     EX.setHeatPoints(rows.map(function(b){ return { lat:b.lat, lon:b.lon, w:b.t }; }));
     EX.setSummary(s.total, s.places);
     syncTabs(f);
@@ -109,9 +112,80 @@
 
   WDK.mountSearch({ input:document.getElementById('placeSearch'), results:document.getElementById('searchResults'), find:findPlaces, onSelect:selectPlace });
 
+  // ---- meldingen per maand, per type (zelfde grafiek als de homepage, maar dan één soort uitgesplitst naar type
+  // in plaats van meerdere soorten) ----
+  var TYPE_SERIES = [
+    { key:'zichtmelding', label:'Zichtmelding', color:'var(--s-zicht)' },
+    { key:'aanval', label:'Aanval op vee', color:'var(--s-aanval)' },
+    { key:'overig', label:'Overig', color:'var(--s-overig)' }
+  ];
+  var chartLegendEl = document.getElementById('chartLegend');
+  TYPE_SERIES.forEach(function(t){
+    if (chartLegendEl) chartLegendEl.insertAdjacentHTML('beforeend', '<div class="legend-group"><span class="swatch" style="background:'+t.color+'"></span>'+t.label+'</div>');
+  });
+  WDK.renderMonthlyChart(document.getElementById('monthlyChart'), TYPE_SERIES.map(function(t){
+    return { key:t.key, label:t.label, color:t.color, rows: WDK.applyFilter(LOADED.all, 'wolf', { types:[t.key] }) };
+  }));
+
+  // ---- waar wordt de wolf het vaakst gemeld? (top gemeenten; `g` komt van PDOK bij het synchroniseren, zie README) ----
+  function renderGemeenten(el, rows){
+    if (!el) return;
+    var by = {}, order = [], total = 0;
+    rows.forEach(function(b){
+      var raw = (b.g || '').trim(), key = raw ? normalize(raw) : '';
+      if (!by[key]){ by[key] = { label: raw || 'Onbekend', n:0, unknown:!raw }; order.push(key); }
+      by[key].n += b.t;
+      total += b.t;
+    });
+    if (!total){ el.style.display = 'none'; return; }
+    el.style.display = '';
+    var all = order.map(function(k){ return by[k]; })
+      .sort(function(a, b){ return (a.unknown - b.unknown) || (b.n - a.n) || (a.label < b.label ? -1 : 1); });
+    var items = all.slice(0, 8);
+    var top = items[0];
+    var sub = (top.unknown ? 'De gemeente is niet van elke melding bekend.' :
+      'Het vaakst in <b>' + WDK.esc(top.label) + '</b> (' + top.n + ' van de ' + total + ' meldingen' +
+      (all.length > items.length ? ', top ' + items.length + ' van ' + all.length + ' gemeenten' : '') + ').');
+    el.innerHTML = '<h2 class="card-title">Waar wordt de wolf het vaakst gemeld?</h2><p class="sub">' + sub + '</p>' +
+      WDK.barChartHtml(items, 'Balkdiagram: aantal meldingen per gemeente. ');
+  }
+  renderGemeenten(document.getElementById('gemeenteCard'), LOADED.all);
+
+  // ---- op welk moment van de dag wordt een wolf gemeld? (alleen meldingen met een bekend tijdstip) ----
+  function renderDaypart(el, rows){
+    if (!el) return;
+    var BUCKETS = [
+      { key:'nacht', label:'Nacht', range:'0–06u', from:0, to:6 },
+      { key:'ochtend', label:'Ochtend', range:'6–12u', from:6, to:12 },
+      { key:'middag', label:'Middag', range:'12–18u', from:12, to:18 },
+      { key:'avond', label:'Avond', range:'18–24u', from:18, to:24 }
+    ];
+    var counts = {}, total = 0, withTime = 0;
+    BUCKETS.forEach(function(b){ counts[b.key] = 0; });
+    rows.forEach(function(b){
+      b.ev.forEach(function(e){
+        total++;
+        if (!e.tm) return;
+        withTime++;
+        var h = parseInt(e.tm.slice(0, 2), 10);
+        var bucket = BUCKETS.filter(function(bk){ return h >= bk.from && h < bk.to; })[0];
+        if (bucket) counts[bucket.key]++;
+      });
+    });
+    if (!withTime){ el.style.display = 'none'; return; }
+    el.style.display = '';
+    var top = BUCKETS.slice().sort(function(a, b){ return counts[b.key] - counts[a.key]; })[0];
+    var items = BUCKETS.map(function(b){ return { label: b.label + ' (' + b.range + ')', n: counts[b.key] }; });
+    var sub = 'Van de ' + total + ' meldingen is bij ' + withTime + ' ook het tijdstip bekend; het vaakst in de <b>' +
+      WDK.esc(top.label.toLowerCase()) + '</b>.';
+    el.innerHTML = '<h2 class="card-title">Op welk moment van de dag wordt een wolf gemeld?</h2><p class="sub">' + sub + '</p>' +
+      WDK.barChartHtml(items, 'Balkdiagram: aantal meldingen per dagdeel. ');
+  }
+  renderDaypart(document.getElementById('daypartCard'), LOADED.all);
+
   // ---- alles wat uit de meldingen volgt komt uit assets/site.js: verwachting, hotspots, weetjes ----
-  WDK.renderForecast(document.getElementById('forecastCard'), { species:'wolf', rows:LOADED.veluwe, scope:'veluwe', updatedAt:LOADED.updatedAt });
-  WDK.renderFunFacts(document.getElementById('funCard'), { rows:LOADED.veluwe });
+  WDK.renderForecast(document.getElementById('forecastCard'), { species:'wolf', rows:LOADED.all, scope:'nl', updatedAt:LOADED.updatedAt });
+  WDK.renderFunFacts(document.getElementById('funCard'), { rows:LOADED.all });
   WDK.renderLivestock(document.getElementById('attackAnimalsCard'), { rows:LOADED.all, mode:'attacks', where:'in heel Nederland' });
   WDK.renderLivestock(document.getElementById('killedCard'), { rows:LOADED.all, mode:'killed', where:'in heel Nederland' });
 

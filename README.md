@@ -3,7 +3,7 @@
 Statisch, klaar om te hosten:
 
 - `index.html` — home (landelijke kaart met alle meldingen + meldingentabel)
-- `wolven.html` — wolvenmeldingen op de Veluwe
+- `wolven.html` — wolvenmeldingen in heel Nederland (een wolf houdt zich niet aan de grens van de Veluwe)
 - `zwijnen.html` — zwijnenmeldingen op de Veluwe
 - `herten.html` — hertenmeldingen op de Veluwe
 - `overig.html` — meldingen van alle andere dieren (ree, vos, ...), heel Nederland
@@ -24,17 +24,21 @@ Statisch, klaar om te hosten:
 Alle meldingen staan in `data/wolven-data.js` en `data/zwijnen-data.js` (elk `window.WOLVEN_DATA` /
 `window.ZWIJNEN_DATA`), niet meer los in elke HTML-pagina. Beide bestanden zijn opgedeeld in:
 
-- `veluwe.all` — meldingen op de Veluwe, voor de eigen kaart en statistieken van `wolven.html`/`zwijnen.html`.
-  (`last2w` en `meta` staan er nog, maar worden niet meer gebruikt: die worden berekend.)
-- `overig` — meldingen elders in Nederland: een platte lijst, alleen gebruikt door de landelijke kaart
-  op de homepage.
+- `veluwe.all` — meldingen op de Veluwe, voor de eigen kaart en statistieken van `zwijnen.html`/`herten.html`
+  (`last2w` en `meta` staan er nog, maar worden niet meer gebruikt: die worden berekend).
+- `overig` — meldingen elders in Nederland: een platte lijst, gebruikt door de landelijke kaart op de homepage.
 
 **Een nieuwe melding voeg je dus maar op één plek toe** (in het juiste databestand). Ligt de plaats op
-de Veluwe? Zet 'm in `veluwe.all` — hij verschijnt dan vanzelf op zowel de wolven-/zwijnenkaart als de
+de Veluwe? Zet 'm in `veluwe.all` — hij verschijnt dan vanzelf op zowel de zwijnen-/hertenkaart als de
 landelijke kaart. Ligt de plaats daarbuiten? Zet 'm alleen in `overig` — hij verschijnt dan alleen op de
-landelijke kaart op de homepage, niet op de Veluwe-kaart zelf. `index.html` laadt beide bestanden en telt
+landelijke kaart op de homepage, niet op de Veluwe-kaart zelf. `index.html` laadt alle databestanden en telt
 `veluwe.all` + `overig` bij elkaar op voor zijn kaart en voor de "Net binnen gekomen meldingen"-tabel (top
 10, automatisch gesorteerd op datum — die tabel hoeft dus nooit meer met de hand bijgewerkt te worden).
+
+**Wolven zijn de uitzondering:** `wolven.html` telt net als `overig.html` altijd `veluwe.all` + `overig` samen
+(`DATA.all = LOADED.all` in `assets/wolven-page.js`, niet `LOADED.veluwe`) — een wolf zwerft door heel
+Nederland, dus die pagina beperkt zich niet tot de Veluwe. Daarom heeft `wolven.html` ook geen
+`#statsNote` ("Daarbuiten: ... meldingen") meer: er is geen "daarbuiten".
 
 Per plaats hoef je alleen `n`, `lat`, `lon` en de lijst gebeurtenissen `ev` (`{ d, ty, tm? }`) in te vullen:
 `t`, `c`, `dom`, de periodefilters, de statistieken, de weekverwachting, de hotspots en de weetjes worden door

@@ -809,6 +809,6 @@
     FILTER_TYPES:FILTER_TYPES, emptyFilter:emptyFilter, isEmptyFilter:isEmptyFilter, parseFilter:parseFilter, filterToParams:filterToParams,
     applyFilter:applyFilter, monthList:monthList, typesPresent:typesPresent, recentCutoff:recentCutoff,
     FORMS:FORMS, PREFILL:PREFILL, renderReportCta:renderReportCta,
-    renderScopeNote:renderScopeNote, forecast:forecast, renderForecast:renderForecast, renderFunFacts:renderFunFacts, renderLivestock:renderLivestock, renderSpeciesBars:renderSpeciesBars, renderMonthlyChart:renderMonthlyChart
+    renderScopeNote:renderScopeNote, forecast:forecast, renderForecast:renderForecast, renderFunFacts:renderFunFacts, renderLivestock:renderLivestock, renderSpeciesBars:renderSpeciesBars, renderMonthlyChart:renderMonthlyChart, barChartHtml:barChartHtml
   };
 })(window);
