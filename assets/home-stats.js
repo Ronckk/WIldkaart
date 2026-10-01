@@ -21,7 +21,7 @@
     var recent = b.ev.slice(0,5);
     if (recent.length){
       html += '<div class="tt-dates">' + recent.map(function(e){
-        return '<div class="date-row">'+fmtDate(e.d)+' &middot; '+(e.diersoort ? WDK.esc(e.diersoort)+' &middot; ' : '')+(TYPE_LABEL[e.ty]||e.ty)+'</div>';
+        return '<div class="date-row">'+fmtDate(e.d)+' &middot; '+(e.diersoort ? WDK.esc(e.diersoort)+' &middot; ' : '')+(TYPE_LABEL[e.ty]||e.ty)+WDK.victimsLabel(e)+'</div>';
       }).join('') + (b.ev.length>5 ? '<div>+ '+(b.ev.length-5)+' eerdere</div>' : '') + '</div>';
     }
     html += '<div class="tt-dates"><a href="'+species.page+'">Bekijk op de '+species.mapName+'</a></div>';

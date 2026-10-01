@@ -523,6 +523,17 @@
     return list.length < 2 ? list.join('') : list.slice(0, -1).join(', ') + ' en ' + list[list.length - 1];
   }
 
+  // Welk vee en hoeveel, als tekst achter "Aanval op vee" in een popup: ": 2 Schaap" of ": 2 Schaap en 1 Ram".
+  // Leeg bij elk ander type, of een aanval zonder genoemd dier.
+  function victimsLabel(e){
+    if (e.ty !== 'aanval') return '';
+    var parts = victimsOf(e).filter(function(v){ return v.dier; }).map(function(v){
+      var n = (v.gedood === undefined || v.gedood === null) ? null : v.gedood;
+      return esc((n !== null ? n + ' ' : '') + v.dier);
+    });
+    return parts.length ? ': ' + joinNl(parts) : '';
+  }
+
   // o: { rows:[plaatsen], mode:'attacks' | 'killed', where?:'in heel Nederland' }; een kaart zonder gegevens verbergt zichzelf.
   //  attacks: per diersoort het aantal AANVALLEN waarbij die soort betrokken was (één aanval telt dus één keer per soort)
   //  killed:  per diersoort het opgetelde aantal gedode dieren
@@ -809,6 +820,6 @@
     FILTER_TYPES:FILTER_TYPES, emptyFilter:emptyFilter, isEmptyFilter:isEmptyFilter, parseFilter:parseFilter, filterToParams:filterToParams,
     applyFilter:applyFilter, monthList:monthList, typesPresent:typesPresent, recentCutoff:recentCutoff,
     FORMS:FORMS, PREFILL:PREFILL, renderReportCta:renderReportCta,
-    renderScopeNote:renderScopeNote, forecast:forecast, renderForecast:renderForecast, renderFunFacts:renderFunFacts, renderLivestock:renderLivestock, renderSpeciesBars:renderSpeciesBars, renderMonthlyChart:renderMonthlyChart, barChartHtml:barChartHtml
+    renderScopeNote:renderScopeNote, forecast:forecast, renderForecast:renderForecast, renderFunFacts:renderFunFacts, renderLivestock:renderLivestock, renderSpeciesBars:renderSpeciesBars, renderMonthlyChart:renderMonthlyChart, barChartHtml:barChartHtml, victimsLabel:victimsLabel
   };
 })(window);

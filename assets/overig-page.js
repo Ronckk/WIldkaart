@@ -24,7 +24,7 @@
     if (b.c.overig) html += '<div class="tt-row"><span>Overig</span><span>'+b.c.overig+'</span></div>';
     var recent = b.ev.slice(0,5);
     html += '<div class="tt-dates">' + recent.map(function(e){
-      return '<div class="date-row">'+fmtDate(e.d)+(e.tm ? ', '+e.tm : '')+' &middot; '+(e.diersoort ? WDK.esc(e.diersoort)+' &middot; ' : '')+TYPE_LABEL[e.ty]+'</div>';
+      return '<div class="date-row">'+fmtDate(e.d)+(e.tm ? ', '+e.tm : '')+' &middot; '+(e.diersoort ? WDK.esc(e.diersoort)+' &middot; ' : '')+TYPE_LABEL[e.ty]+WDK.victimsLabel(e)+'</div>';
     }).join('') + (b.ev.length>5 ? '<div>+ '+(b.ev.length-5)+' eerdere</div>' : '') + '</div>';
     return html;
   }
