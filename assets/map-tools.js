@@ -2,14 +2,16 @@
  *
  * Bovenop Leaflet en assets/site.js:
  *  - WDK.HeatLayer      dichtheids-/hitte-laag (canvas, zonder extra bibliotheek) die onder de bolletjes ligt
- *  - WDK.mountExplorer  filterbalk voor een kaart: type, periode, tijdschuif met afspelen, hitte-laag,
- *                       en de hele toestand als deelbare URL (?soort=wolf&type=aanval&van=2026-05&tot=2026-08&heat=1)
+ *  - WDK.mountExplorer  filterbalk voor een kaart: type, periode, tijdschuif met afspelen, hitte-laag, bolletjes
+ *                       aan/uit (bv. om alleen de hitte-laag te tonen), en de hele toestand als deelbare URL
+ *                       (?soort=wolf&type=aanval&van=2026-05&tot=2026-08&heat=1&dots=0)
  *  - WDK.clusterLayer   bolletjes die dicht bij elkaar liggen (binnen 5 km), of uitgezoomd in dezelfde gemeente liggen,
  *                       samenvoegen tot één cluster met het aantal meldingen; bij inzoomen vallen ze weer uit elkaar
- *                       (WDK.clusterPoints is de berekening zelf)
+ *                       (WDK.clusterPoints is de berekening zelf; .setVisible(bool) toont of verbergt ze in één keer)
  *
  * De pagina houdt zelf de bolletjes bij: bij elke wijziging roept de balk `onChange(filter)` aan, de pagina
- * filtert met WDK.applyFilter, tekent opnieuw en geeft de punten voor de hitte-laag terug via setHeatPoints.
+ * filtert met WDK.applyFilter, tekent opnieuw, geeft de punten voor de hitte-laag terug via setHeatPoints en
+ * verbergt zelf de bolletjes met clusterLayer(...).setVisible(filter.dots).
  */
 (function(root){
   'use strict';
@@ -116,11 +118,14 @@
 
   // ---------------------------------------------------------------- filterbalk
   // o: { el, map, rows:[alle plaatsen, ongefilterd], species?:[{key,label}] (alleen als er meerdere soorten zijn),
-  //      heat?:false (geen hitte-laag), onChange:function(filter) }
+  //      heat?:false (geen hitte-laag), dots?:false (geen "Bolletjes"-schakelaar), onChange:function(filter) }
+  // De pagina zelf verbergt de bolletjes: f.dots staat in het filter dat bij elke wijziging aan onChange meegaat,
+  // de pagina roept daar zelf WDK.clusterLayer(...).setVisible(f.dots) mee aan (zie bv. assets/wolven-page.js).
   function mountExplorer(o){
     var map = o.map, el = o.el, months = WDK.monthList(o.rows), types = WDK.typesPresent(o.rows);
     var speciesKeys = (o.species || []).map(function(s){ return s.key; });
     var heatEnabled = o.heat !== false; // { heat:false } = geen hitte-laag op deze kaart (bv. de homepage)
+    var dotsEnabled = o.dots !== false; // { dots:false } = geen "Bolletjes"-schakelaar op deze kaart
     var heat = new HeatLayer();
     var f = WDK.parseFilter(root.location.search);
 
@@ -135,6 +140,7 @@
     }
 
     if (!heatEnabled) f.heat = false;
+    if (!dotsEnabled) f.dots = true;
 
     var timer = null, cumulative = false;
 
@@ -172,6 +178,7 @@
         '<label class="wdk-check"><input type="checkbox" class="wdk-cum"> opgebouwd</label>' +
       '</div>' +
       '<div class="wdk-row wdk-foot">' +
+        (dotsEnabled ? '<label class="wdk-check"><input type="checkbox" class="wdk-dots" checked> Bolletjes</label>' : '') +
         (heatEnabled ? '<label class="wdk-check"><input type="checkbox" class="wdk-heat"> Hitte-laag</label>' : '') +
         '<span class="wdk-summary" aria-live="polite"></span>' +
         '<button type="button" class="wdk-btn wdk-share">Kopieer link</button>' +
@@ -182,13 +189,13 @@
     var chips = el.querySelectorAll('.wdk-chip[data-type]'), speciesChips = el.querySelectorAll('.wdk-chip[data-species]');
     var dateInputs = { van:$('[data-k="van"]'), tot:$('[data-k="tot"]') };
     var slider = $('.wdk-slider'), monthOut = $('.wdk-month'), cumBox = $('.wdk-cum');
-    var playBtn = $('.wdk-play'), heatBox = $('.wdk-heat'), resetBtn = $('.wdk-reset'), shareBtn = $('.wdk-share');
+    var playBtn = $('.wdk-play'), heatBox = $('.wdk-heat'), dotsBox = $('.wdk-dots'), resetBtn = $('.wdk-reset'), shareBtn = $('.wdk-share');
     var summaryEl = $('.wdk-summary'), panel = $('.wdk-panel'), badge = $('.wdk-badge'), headSum = $('.wdk-head-sum');
     // op een telefoon start het paneel ingeklapt, zodat de kaart meteen in beeld is
     panel.open = !(root.matchMedia && root.matchMedia('(max-width:640px)').matches);
 
     function copy(){
-      return { soort:f.soort ? f.soort.slice() : null, types:f.types ? f.types.slice() : null, van:f.van, tot:f.tot, heat:f.heat };
+      return { soort:f.soort ? f.soort.slice() : null, types:f.types ? f.types.slice() : null, van:f.van, tot:f.tot, heat:f.heat, dots:f.dots };
     }
     function writeUrl(){
       try {
@@ -225,8 +232,9 @@
       }
       cumBox.checked = cumulative;
       if (heatBox) heatBox.checked = !!f.heat;
+      if (dotsBox) dotsBox.checked = f.dots !== false;
       resetBtn.disabled = WDK.isEmptyFilter(f) && !f.soort;
-      badge.hidden = WDK.isEmptyFilter(f) && !f.soort && !f.heat;
+      badge.hidden = WDK.isEmptyFilter(f) && !f.soort && !f.heat && f.dots !== false;
       if (f.heat && !map.hasLayer(heat)) map.addLayer(heat);
       if (!f.heat && map.hasLayer(heat)) map.removeLayer(heat);
     }
@@ -239,6 +247,7 @@
     function update(patch, opts){
       Object.keys(patch).forEach(function(k){ f[k] = patch[k]; });
       if (!heatEnabled) f.heat = false;
+      if (!dotsEnabled) f.dots = true;
       if (f.van && f.tot && f.van > f.tot){ var t = f.van; f.van = f.tot; f.tot = t; }
       sync();
       writeUrl();
@@ -306,6 +315,8 @@
       }, PLAY_MS);
     });
     if (heatBox) heatBox.addEventListener('change', function(){ update({ heat:heatBox.checked }, { silent:true }); });
+    // niet silent: de pagina zelf verbergt de bolletjes (CL.setVisible), dus die moet de wijziging via onChange horen
+    if (dotsBox) dotsBox.addEventListener('change', function(){ update({ dots:dotsBox.checked }); });
     shareBtn.addEventListener('click', function(){
       var url = root.location.href, label = shareBtn.textContent;
       function done(t){ shareBtn.textContent = t; setTimeout(function(){ shareBtn.textContent = label; }, 1800); }
@@ -479,6 +490,17 @@
       map.once('moveend', open);   // moveend komt ná zoomend, dus het bolletje is dan al getekend
       map.flyTo(target, z, { duration:0.6 });
       return true;
+    },
+    // bolletjes en clusters in één keer aan/uit (voor de "Bolletjes"-schakelaar: alleen de hitte-laag tonen)
+    setVisible: function(v){
+      var map = this._map;
+      if (v){
+        if (!map.hasLayer(this._singles)) map.addLayer(this._singles);
+        if (!map.hasLayer(this._extra)) map.addLayer(this._extra);
+      } else {
+        if (map.hasLayer(this._singles)) map.removeLayer(this._singles);
+        if (map.hasLayer(this._extra)) map.removeLayer(this._extra);
+      }
     }
   };
 

@@ -45,7 +45,7 @@
 
   // ---- filterbalk: soort, type, periode, tijdschuif (afspelen), hitte-laag; de stand staat ook in de URL ----
   var EX = WDK.mountExplorer({
-    el:document.getElementById('explorer'), map:map, species:SPECIES, onChange:renderMap, heat:false, // hitte-laag alleen op de wolven-/zwijnenpagina
+    el:document.getElementById('explorer'), map:map, species:SPECIES, onChange:renderMap, heat:false, dots:false, // hitte-laag en bolletjes-schakelaar alleen op de soortpagina's
     rows: SPECIES.reduce(function(all, s){ return all.concat(s.rows); }, [])
   });
   window.__nlExplorer = EX;

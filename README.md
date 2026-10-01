@@ -247,14 +247,20 @@ Onder de zoekbalk van elke kaart staat een inklapbaar paneel "Filter & tijd" (op
 telefoon; ingeklapt zie je alleen een "actief"-label en het aantal meldingen). Het bevat: **type** (zicht / aanval / jonkies / overig; alleen typen
 die in de data voorkomen), **periode** (van/tot), een **tijdschuif** per maand met een afspeelknop (met de optie
 "opgebouwd" = alles t/m die maand) en — op alle soortpagina's (wolven, zwijnen, herten, overig), niet op de homepage — een
-**hitte-laag** onder de bolletjes. Op de homepage staat in hetzelfde paneel ook de **soort** (wolf/zwijn); de legenda onder de kaart is alleen nog de kleurcode. De hele stand staat in de URL, dus je kunt een weergave delen ("Kopieer link"):
+**hitte-laag** onder de bolletjes en een **"Bolletjes"**-schakelaar om die bolletjes (en clusters) in één keer te verbergen,
+bijvoorbeeld om alleen de hitte-laag te tonen. Op de homepage staat in hetzelfde paneel ook de **soort** (wolf/zwijn/hert);
+de legenda onder de kaart is alleen nog de kleurcode. De hele stand staat in de URL, dus je kunt een weergave delen
+("Kopieer link"):
 
-    ?soort=wolf&type=aanval,zichtmelding&van=2026-05&tot=2026-08&heat=1
+    ?soort=wolf&type=aanval,zichtmelding&van=2026-05&tot=2026-08&heat=1&dots=0
 
 `van`/`tot` mogen `JJJJ-MM-DD` of `JJJJ-MM` zijn (`tot=2026-08` = t/m 31 aug). Onbekende of ongeldige waarden
 worden genegeerd. `?plaats=Epe` werkt er nog steeds naast. De filterlogica staat in `assets/site.js`
-(`parseFilter`, `applyFilter`, `monthList`); de knoppen en de hitte-laag in `assets/map-tools.js`. Het filter
-geldt voor de kaart (en de kaartstatistieken); tabel, grafiek en verwachting blijven altijd op alle data gebaseerd.
+(`parseFilter`, `applyFilter`, `monthList`); de knoppen, de hitte-laag en `WDK.clusterLayer(...).setVisible(bool)` in
+`assets/map-tools.js`. De pagina roept dat laatste zelf aan (`CL.setVisible(filter.dots)` in bv. `assets/wolven-page.js`) —
+`dots` stuurt alleen de bolletjes, niet welke meldingen er zijn; "Bolletjes" uitzetten telt dus niets anders of uit het
+zicht. Het filter geldt voor de kaart (en de kaartstatistieken); tabel, grafiek en verwachting blijven altijd op alle
+data gebaseerd.
 
 ## Opmaak en scripts
 

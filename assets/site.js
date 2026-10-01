@@ -723,8 +723,8 @@
   // Eén filterobject, ook als URL te delen:  ?soort=wolf&type=aanval,zichtmelding&van=2026-05-01&tot=2026-08-31&heat=1
   // van/tot mogen ook als maand (van=2026-05 = 1 mei, tot=2026-05 = 31 mei). Onbekende waarden worden genegeerd.
   var FILTER_TYPES = ['zichtmelding','aanval','jonkies','overig'];
-  function emptyFilter(){ return { soort:null, types:null, van:null, tot:null, heat:false }; }
-  // alleen type en periode zijn filters op de meldingen; soort en heat bepalen wat de pagina toont
+  function emptyFilter(){ return { soort:null, types:null, van:null, tot:null, heat:false, dots:true }; }
+  // alleen type en periode zijn filters op de meldingen; soort, heat en dots bepalen wat de pagina toont
   function isEmptyFilter(f){ return !f || (!f.types && !f.van && !f.tot); }
 
   function dateParam(v, isEnd){
@@ -750,6 +750,7 @@
     f.tot = dateParam(q.get('tot'), true);
     if (f.van && f.tot && f.van > f.tot){ var t = f.van; f.van = f.tot; f.tot = t; }
     f.heat = q.get('heat') === '1';
+    f.dots = q.get('dots') !== '0'; // standaard aan; alleen ?dots=0 zet ze uit
     return f;
   }
   // schrijft het filter in een URLSearchParams (andere parameters, zoals ?plaats=, blijven staan)
@@ -760,6 +761,7 @@
     put('van', f.van);
     put('tot', f.tot);
     put('heat', f.heat ? '1' : '');
+    put('dots', f.dots === false ? '0' : '');
     return params;
   }
 

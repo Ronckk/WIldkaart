@@ -30,11 +30,13 @@
   }
 
   function render(){
-    var rows = WDK.applyFilter(DATA.all, 'hert', EX.get());
+    var f = EX.get();
+    var rows = WDK.applyFilter(DATA.all, 'hert', f);
     var pm = WDK.placeMarkers(rows, { color:function(b){ return COLORS[b.dom]; }, popup:popupHtml });
     CL.setItems(pm.items, { halo: pm.latestId }); // dicht bij elkaar (binnen 5 km): één cluster met het aantal meldingen
+    CL.setVisible(f.dots !== false); // "Bolletjes" uit: alleen de hitte-laag tonen
     var s = renderStats(rows);
-    WDK.renderScopeNote(document.getElementById('statsNote'), { rows:LOADED.overig, key:'hert', filter:EX.get(), where:'de Veluwe', attacks:false });
+    WDK.renderScopeNote(document.getElementById('statsNote'), { rows:LOADED.overig, key:'hert', filter:f, where:'de Veluwe', attacks:false });
     EX.setHeatPoints(rows.map(function(b){ return { lat:b.lat, lon:b.lon, w:b.t }; }));
     EX.setSummary(s.total, s.places);
   }
