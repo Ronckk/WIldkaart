@@ -1,6 +1,6 @@
 # Haalt de meldingen uit SeaTable en publiceert de site op GitHub Pages (wildkaart.rlode.nl).
 #
-#  - elke 3 uur (en met de knop "Run workflow"): sync met SeaTable; alleen als er iets nieuws is wordt er gecommit en gepubliceerd
+#  - elke 3 uur (en met de knop "Run workflow"): sync met SeaTable (alleen bij iets nieuws wordt er gecommit); daarna altijd publiceren
 #  - bij elke push naar main: de site opnieuw publiceren
 #
 # Nodig (eenmalig, zie README): secret SEATABLE_API_TOKEN, en Settings > Pages > Source = "GitHub Actions".
@@ -68,11 +68,13 @@ jobs:
 
   deploy:
     needs: sync
-    # push: altijd publiceren. Schema: alleen als de sync iets nieuws committe. Handmatig starten: altijd publiceren (na een geslaagde sync).
+    # push: altijd publiceren. Schema en handmatig starten: altijd publiceren na een geslaagde sync, ook zonder nieuwe meldingen.
+    # (Alleen publiceren bij nieuwe meldingen liet de site achterlopen als een publicatie eenmaal door een GitHub-storing
+    # mislukte: de volgende run vond dan "niets nieuws" en publiceerde niet meer. Nu herstelt de site zich bij de volgende run.)
     if: >-
       always() && (
         github.event_name == 'push' ||
-        (needs.sync.result == 'success' && (github.event_name == 'workflow_dispatch' || needs.sync.outputs.changed == 'true'))
+        needs.sync.result == 'success'
       )
     runs-on: ubuntu-latest
     permissions:
