@@ -312,7 +312,7 @@ De site staat in een GitHub-repo en wordt met GitHub Pages gepubliceerd op **wil
 
 - **Elke 3 uur** (en met de knop *Actions > Site > Run workflow*): `tools/seatable_sync.py` draaien. Zijn er nieuwe
   meldingen, dan worden `data/`, het versienummer in de HTML en `tools/place-cache.json` en `tools/gemeente-cache.json` gecommit en wordt de site
-  opnieuw gepubliceerd. Zijn er geen nieuwe meldingen, dan gebeurt er niets (geen commit, geen publicatie).
+  opnieuw gepubliceerd. Zijn er geen nieuwe meldingen, dan komt er geen commit, maar de site wordt wel opnieuw gepubliceerd: zo herstelt een mislukte publicatie (een tijdelijke GitHub-storing) zich bij de volgende run.
 - **Bij elke push naar `main`**: de site opnieuw publiceren. Gepubliceerd worden de pagina's (`index.html`, `wolven.html`,
   `zwijnen.html`, `overig.html`, `over.html`, `404.html`), `robots.txt`, een vers gemaakte `sitemap.xml`, `assets/` en `data/`
   (dus niet `tools/`, de tests of deze README).
