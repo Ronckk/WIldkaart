@@ -287,7 +287,7 @@
     if (s.total){
       txt += ' Daarbuiten: ' + meldingen(s.total) +
         (o.attacks && s.byType.aanval ? ', waarvan ' + s.byType.aanval + (s.byType.aanval === 1 ? ' aanval' : ' aanvallen') + ' op vee' : '') +
-        ' (zie de <a href="./">landelijke kaart</a>).';
+        '.';
     }
     el.innerHTML = txt;
   }

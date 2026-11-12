@@ -2,7 +2,7 @@
 
 Statisch, klaar om te hosten:
 
-- `index.html` — home (landelijke kaart met alle meldingen + meldingentabel)
+- `index.html` — home (meldingentabel, grafiek per maand en wolvenverwachting; de kaart is verplaatst naar de pagina van elke diersoort)
 - `wolven.html` — wolvenmeldingen in heel Nederland (een wolf houdt zich niet aan de grens van de Veluwe)
 - `zwijnen.html` — zwijnenmeldingen op de Veluwe
 - `herten.html` — hertenmeldingen op de Veluwe
@@ -26,14 +26,12 @@ Alle meldingen staan in `data/wolven-data.js` en `data/zwijnen-data.js` (elk `wi
 
 - `veluwe.all` — meldingen op de Veluwe, voor de eigen kaart en statistieken van `zwijnen.html`/`herten.html`
   (`last2w` en `meta` staan er nog, maar worden niet meer gebruikt: die worden berekend).
-- `overig` — meldingen elders in Nederland: een platte lijst, gebruikt door de landelijke kaart op de homepage.
+- `overig` — meldingen elders in Nederland: een platte lijst; telt mee op de pagina's die heel Nederland tonen (wolven, overig) en in de homepagetabel.
 
 **Een nieuwe melding voeg je dus maar op één plek toe** (in het juiste databestand). Ligt de plaats op
-de Veluwe? Zet 'm in `veluwe.all` — hij verschijnt dan vanzelf op zowel de zwijnen-/hertenkaart als de
-landelijke kaart. Ligt de plaats daarbuiten? Zet 'm alleen in `overig` — hij verschijnt dan alleen op de
-landelijke kaart op de homepage, niet op de Veluwe-kaart zelf. `index.html` laadt alle databestanden en telt
-`veluwe.all` + `overig` bij elkaar op voor zijn kaart en voor de "Net binnen gekomen meldingen"-tabel (top
-10, automatisch gesorteerd op datum — die tabel hoeft dus nooit meer met de hand bijgewerkt te worden).
+de Veluwe? Zet 'm in `veluwe.all` — hij verschijnt dan vanzelf op de zwijnen-/hertenkaart (en op de wolven- en overig-pagina). Ligt de plaats
+daarbuiten? Zet 'm alleen in `overig` — hij verschijnt dan niet op de zwijnen-/hertenkaart zelf. `index.html` laadt alle
+databestanden en telt `veluwe.all` + `overig` bij elkaar op voor de "Net binnen gekomen meldingen"-tabel (de 10 nieuwste, automatisch gesorteerd op datum — die tabel hoeft dus nooit meer met de hand bijgewerkt te worden).
 
 **Wolven zijn de uitzondering:** `wolven.html` telt net als `overig.html` altijd `veluwe.all` + `overig` samen
 (`DATA.all = LOADED.all` in `assets/wolven-page.js`, niet `LOADED.veluwe`) — een wolf zwerft door heel
@@ -180,7 +178,7 @@ rechtstreeks naar de formulieren.
 
 ## Clusteren op de kaart
 
-Op de homepage en de wolven-, zwijnen- en overig-pagina voegt `WDK.clusterLayer` (`assets/map-tools.js`) bolletjes die dicht bij
+Op de wolven-, zwijnen-, herten- en overig-pagina voegt `WDK.clusterLayer` (`assets/map-tools.js`) bolletjes die dicht bij
 elkaar liggen samen tot één cluster met het totale aantal meldingen. Klik je op een cluster, dan zoom je in en valt het uit elkaar;
 uitzoomen voegt ze weer samen. "Dicht bij elkaar" betekent: hoogstens **5 km** in werkelijkheid én hoogstens **60 pixels** op het
 scherm, en vanaf zoomniveau **16** staat elk bolletje los. Daarnaast gaan bolletjes in **dezelfde gemeente** samen zodra je
@@ -188,8 +186,7 @@ onder zoomniveau **10** uitzoomt (dus 9 en lager), ook als ze verder dan 5 km ui
 gewogen midden van die bolletjes en de tooltip noemt de gemeente. Op niveau 10 en hoger (het beginbeeld van de wolven- en
 zwijnenpagina) telt alleen de afstand. De vier getallen staan in `CLUSTER` bovenin dat blok
 (`maxKm`, `maxPx`, `noClusterZoom`, `gemeenteZoom`). Wil je dat bolletjes ook bij een landelijk beeld al eerder samengaan (nu gebeurt dat alleen
-binnen 5 km), verhoog dan `maxKm`. De kleur van een cluster is die van de belangrijkste melding erin (aanval, dan jonkies, dan zicht);
-op de homepage is een cluster met meerdere diersoorten grijs. Het zoeken van een plaats zoomt zo ver in dat het bolletje los staat en opent
+binnen 5 km), verhoog dan `maxKm`. De kleur van een cluster is die van de belangrijkste melding erin (aanval, dan jonkies, dan zicht). Het zoeken van een plaats zoomt zo ver in dat het bolletje los staat en opent
 dan zijn popup. De rekenregel zelf is `WDK.clusterPoints(items, zoom)` en heeft geen kaart nodig.
 
 ## Gedeelde kaartcode
@@ -201,7 +198,7 @@ Wat elke kaartpagina nodig heeft staat één keer in `assets/map-base.js` (gelad
 - `WDK.placeMarkers(rows, { color, popup, radius?, weight?, id? })`: de bolletjes van een lijst plaatsen, klaar voor `WDK.clusterLayer(...).setItems`.
 - `WDK.revealMap(el)`: scrolt de kaart in beeld. De actieve menuknop die naar boven scrolt staat in `assets/theme.js`.
 
-De pagina's (`wolven-page.js`, `zwijnen-page.js`, `overig-page.js`, `home-map.js`, `home-stats.js`, `melden.js`) houden alleen over wat bij hen hoort:
+De pagina's (`wolven-page.js`, `zwijnen-page.js`, `overig-page.js`, `home-stats.js`, `melden.js`) houden alleen over wat bij hen hoort:
 cijfers, popups, kleuren en welke plaatsen er zijn. Een nieuwe kaartpagina laadt `map-base.js` (en `map-tools.js` voor filters en clusters).
 
 ## Menubalk en voettekst
@@ -248,8 +245,7 @@ telefoon; ingeklapt zie je alleen een "actief"-label en het aantal meldingen). H
 die in de data voorkomen), **periode** (van/tot), een **tijdschuif** per maand met een afspeelknop (met de optie
 "opgebouwd" = alles t/m die maand) en — op alle soortpagina's (wolven, zwijnen, herten, overig), niet op de homepage — een
 **hitte-laag** onder de bolletjes en een **"Bolletjes"**-schakelaar om die bolletjes (en clusters) in één keer te verbergen,
-bijvoorbeeld om alleen de hitte-laag te tonen. Op de homepage staat in hetzelfde paneel ook de **soort** (wolf/zwijn/hert);
-de legenda onder de kaart is alleen nog de kleurcode. De hele stand staat in de URL, dus je kunt een weergave delen
+bijvoorbeeld om alleen de hitte-laag te tonen. De legenda onder de kaart is alleen de kleurcode (het soortfilter bestaat alleen nog in `WDK.mountExplorer` als een pagina meerdere soorten laat zien; nu geen enkele). De hele stand staat in de URL, dus je kunt een weergave delen
 ("Kopieer link"):
 
     ?soort=wolf&type=aanval,zichtmelding&van=2026-05&tot=2026-08&heat=1&dots=0
@@ -275,7 +271,7 @@ data (JSON-LD) en de paar regels die de pagina aan een diersoort koppelen (`WDK.
 | `assets/text.css` | `over.html` en `404.html` |
 | `assets/shell.css`, `assets/map-tools.css` | menubalk en voettekst; filterbalk en hitte-laag (op alle pagina's) |
 | `assets/wolven-page.js`, `zwijnen-page.js`, `herten-page.js`, `overig-page.js` | de kaart, statistieken en verwachting van die pagina |
-| `assets/home-map.js`, `assets/home-stats.js` | homepage: de landelijke kaart, dan tabel, grafiek en filters |
+| `assets/home-stats.js` | homepage: tabel met de 10 nieuwste meldingen, grafiek per maand en verwachting |
 | `assets/theme.js`, `assets/back-to-top.js` | licht/donker-knop (alle pagina's); knop "Naar boven" (wolvenpagina) |
 
 Een wijziging in een pagina-eigen script of stijlblad werkt voor iedereen pas als hun browser het bestand opnieuw ophaalt
@@ -292,7 +288,7 @@ als je dat terug wilt). `test_site_seo.py` faalt nog steeds als een pagina naar 
 De kaarten gebruiken **Leaflet** voor de interactie (zoom, pan, zoeken, popups) met **CARTO's
 basemap-tegels** (Voyager voor licht, Dark Matter voor donker — schakelt automatisch mee met de
 licht/donker-knop). CARTO vereist tegenwoordig een gratis API-key in de tegel-URL (`?key=...`); die
-staat in de vier kaartscripts (`assets/home-map.js`, `wolven-page.js`, `zwijnen-page.js`, `overig-page.js`). Verandert de key,
+staat in de vier kaartscripts (`wolven-page.js`, `zwijnen-page.js`, `overig-page.js`). Verandert de key,
 pas hem dan in alle vier aan. De tegels zijn de enige externe dienst die de pagina's nog aanroepen.
 
 Leaflet zelf (versie 1.9.4, BSD-2) staat in `assets/vendor/leaflet/` en wordt dus niet meer van unpkg.com geladen; dat is

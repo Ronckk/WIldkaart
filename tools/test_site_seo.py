@@ -167,7 +167,7 @@ class SeoTest(unittest.TestCase):
                 for host in ('fonts.googleapis.com', 'fonts.gstatic.com', 'unpkg.com'):
                     self.assertNotIn(host, s)
                 self.assertNotIn('assets/fonts', s)                          # geen eigen lettertype-bestanden meer nodig
-        for page in ('index.html', 'wolven.html', 'zwijnen.html', 'overig.html'):
+        for page in ('wolven.html', 'zwijnen.html', 'herten.html', 'overig.html'):    # de homepage heeft geen kaart meer
             s = read(page)
             self.assertIn('src="assets/vendor/leaflet/leaflet.js"', s, page)
             self.assertIn('href="assets/vendor/leaflet/leaflet.css"', s, page)

@@ -709,10 +709,9 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(sync.stat_note_html(outside_none, 'de Veluwe', True), 'Cijfers en kaart gelden voor de Veluwe.')
         outside = sync.stat_compute([{'n': 'X', 'ev': [{'d': '2026-09-01', 'ty': 'aanval'}, {'d': '2026-09-02', 'ty': 'zichtmelding'}]}])
         self.assertEqual(sync.stat_note_html(outside, 'de Veluwe', True),
-                          'Cijfers en kaart gelden voor de Veluwe. Daarbuiten: 2 meldingen, waarvan 1 aanval op vee '
-                          '(zie de <a href="./">landelijke kaart</a>).')
+                          'Cijfers en kaart gelden voor de Veluwe. Daarbuiten: 2 meldingen, waarvan 1 aanval op vee.')
         self.assertEqual(sync.stat_note_html(outside, 'de Veluwe', False),                    # attacks=False: geen aanvalszin
-                          'Cijfers en kaart gelden voor de Veluwe. Daarbuiten: 2 meldingen (zie de <a href="./">landelijke kaart</a>).')
+                          'Cijfers en kaart gelden voor de Veluwe. Daarbuiten: 2 meldingen.')
 
     def test_missing_marker_warns_but_does_not_crash(self):
         warns = []

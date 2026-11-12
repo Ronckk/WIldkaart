@@ -29,8 +29,6 @@
 <link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <script type="application/ld+json">{"@type": "WebSite", "name": "Wilde Dieren in Kaart", "url": "https://wildkaart.rlode.nl/", "inLanguage": "nl", "@context": "https://schema.org", "description": "Kaart met gecontroleerde meldingen van wolven en zwijnen in Nederland."}</script>
-<link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin>
-<link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="assets/map-tools.css">
 <link rel="stylesheet" href="assets/shell.css">
 <link rel="stylesheet" href="assets/home.css">
@@ -59,15 +57,15 @@
     <h1>Wilde dieren in Nederland, in kaart gebracht</h1>
     <p class="sub">Waarnemingen en incidenten met wilde dieren in Nederland. Hieronder de meest recente meldingen, over alle bijgehouden diersoorten heen.</p>
   </header>
-  <noscript><div class="notice">Voor de kaart en de filters op deze pagina is JavaScript nodig. <!-- stat:noscript -->Laatste check op 9 nov 2026, 20:52 uur. Schakel JavaScript in voor de kaart en de filters.<!-- /stat:noscript --></div></noscript>
+  <noscript><div class="notice">Voor de meldingen en grafieken op deze pagina is JavaScript nodig. <!-- stat:noscript -->Laatste check op 9 nov 2026, 20:52 uur. Schakel JavaScript in voor de meldingen en grafieken.<!-- /stat:noscript --></div></noscript>
 
   <section class="animal-card">
     <h2 class="card-title">Net binnen gekomen meldingen</h2>
     <p class="sub" id="lastUpdateNote"><!-- stat:updated -->Laatste check op 9 nov 2026, 20:52 uur.<!-- /stat:updated --></p>
-    <div class="report-table-wrap" tabindex="0" role="region" aria-label="De laatste 25 meldingen (scrollbaar)">
+    <div class="report-table-wrap">
       <table class="report-table">
         <thead><tr><th>Plaats</th><th>Datum</th><th>Dier</th><th>Type</th></tr></thead>
-        <tbody id="recentReportsBody"><!-- stat:recent --><tr><td class="rt-place" data-label="Plaats">Heerde</td><td data-label="Datum">9 nov 2026, 08:30</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-zicht">Zichtmelding</td></tr><tr><td class="rt-place" data-label="Plaats">Uddel</td><td data-label="Datum">8 nov 2026, 21:38</td><td data-label="Dier"><a class="rt-species" href="herten">🦌 Hert</a></td><td data-label="Type" class="rt-type-zicht">Zichtmelding</td></tr><tr><td class="rt-place" data-label="Plaats">Ermelo</td><td data-label="Datum">8 nov 2026, 20:48</td><td data-label="Dier"><a class="rt-species" href="overig">🐾 Ree</a></td><td data-label="Type" class="rt-type-zicht">Zichtmelding</td></tr><tr><td class="rt-place" data-label="Plaats">Dwingeloo</td><td data-label="Datum">7 nov 2026</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Rijssen</td><td data-label="Datum">6 nov 2026</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Wezep</td><td data-label="Datum">6 nov 2026</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Vught</td><td data-label="Datum">6 nov 2026</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Epe</td><td data-label="Datum">2 nov 2026</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type">Aanrijding</td></tr><tr><td class="rt-place" data-label="Plaats">Een-West</td><td data-label="Datum">31 okt 2026</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Hattemerbroek</td><td data-label="Datum">30 okt 2026, 15:10</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Lunteren</td><td data-label="Datum">28 okt 2026, 15:11</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Emst</td><td data-label="Datum">27 okt 2026, 15:11</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Coevorden</td><td data-label="Datum">27 okt 2026, 15:11</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Heusden</td><td data-label="Datum">27 okt 2026, 15:11</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Heesselt</td><td data-label="Datum">24 okt 2026, 15:11</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><!-- /stat:recent --></tbody>
+        <tbody id="recentReportsBody"><!-- stat:recent --><tr><td class="rt-place" data-label="Plaats">Heerde</td><td data-label="Datum">9 nov 2026, 08:30</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-zicht">Zichtmelding</td></tr><tr><td class="rt-place" data-label="Plaats">Uddel</td><td data-label="Datum">8 nov 2026, 21:38</td><td data-label="Dier"><a class="rt-species" href="herten">🦌 Hert</a></td><td data-label="Type" class="rt-type-zicht">Zichtmelding</td></tr><tr><td class="rt-place" data-label="Plaats">Ermelo</td><td data-label="Datum">8 nov 2026, 20:48</td><td data-label="Dier"><a class="rt-species" href="overig">🐾 Ree</a></td><td data-label="Type" class="rt-type-zicht">Zichtmelding</td></tr><tr><td class="rt-place" data-label="Plaats">Dwingeloo</td><td data-label="Datum">7 nov 2026</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Rijssen</td><td data-label="Datum">6 nov 2026</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Wezep</td><td data-label="Datum">6 nov 2026</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Vught</td><td data-label="Datum">6 nov 2026</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Epe</td><td data-label="Datum">2 nov 2026</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type">Aanrijding</td></tr><tr><td class="rt-place" data-label="Plaats">Een-West</td><td data-label="Datum">31 okt 2026</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><tr><td class="rt-place" data-label="Plaats">Hattemerbroek</td><td data-label="Datum">30 okt 2026, 15:10</td><td data-label="Dier"><a class="rt-species" href="wolven">🐺 Wolf</a></td><td data-label="Type" class="rt-type-aanval">Aanval op vee</td></tr><!-- /stat:recent --></tbody>
       </table>
     </div>
   </section>
@@ -76,21 +74,12 @@
 
   <section class="animal-card">
     <h2 class="card-title">Landelijke kaart</h2>
-    <div class="map-search">
-      <input type="text" id="nlPlaceSearch" class="search-input" placeholder="Zoek een provincie of plaats&hellip;" autocomplete="off" aria-label="Zoek een provincie of plaats op de landelijke kaart">
-      <div class="search-results" id="nlSearchResults" hidden></div>
-    </div>
-    <div id="explorer"></div>
-    <div class="map-wrap">
-      <div id="nlMap" role="img" aria-label="Kaart van Nederland met wolven- en zwijnenmeldingen"></div>
-      <div class="zoom-controls">
-        <button type="button" id="nlZoomIn" aria-label="Inzoomen">+</button>
-        <button type="button" id="nlZoomOut" aria-label="Uitzoomen">&minus;</button>
-        <button type="button" id="nlZoomReset" aria-label="Kaart resetten" style="font-size:12px;">&#8634;</button>
-      </div>
-    </div>
-    <div class="map-foot">
-      <div class="legend" id="mapLegend"></div>
+    <p class="sub">Deze is verplaatst naar:</p>
+    <div class="rc-actions">
+      <a class="rc-btn" href="wolven">&#128058; Wolven<span class="rc-arrow" aria-hidden="true">&#8594;</span></a>
+      <a class="rc-btn" href="zwijnen">&#128023; Zwijnen<span class="rc-arrow" aria-hidden="true">&#8594;</span></a>
+      <a class="rc-btn" href="herten">&#129420; Herten<span class="rc-arrow" aria-hidden="true">&#8594;</span></a>
+      <a class="rc-btn" href="overig">&#128062; Overig<span class="rc-arrow" aria-hidden="true">&#8594;</span></a>
     </div>
   </section>
 
@@ -151,10 +140,6 @@
 <script src="data/overig-data.js?v=7ade198641"></script>
 
 <script src="assets/site.js"></script>
-<script src="assets/vendor/leaflet/leaflet.js"></script>
-<script src="assets/map-base.js"></script>
-<script src="assets/map-tools.js"></script>
-<script src="assets/home-map.js"></script>
 <script src="assets/home-stats.js"></script>
 <script src="assets/theme.js"></script>
 

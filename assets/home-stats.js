@@ -1,7 +1,7 @@
-// Homepage (index.html): meldingentabel, grafiek, filters en kaartlagen; alle cijfers komen uit assets/site.js (WDK).
+// Homepage (index.html): meldingentabel, grafiek per maand en wolvenverwachting; alle cijfers komen uit assets/site.js (WDK).
+// De landelijke kaart staat niet meer op de homepage: elke diersoort heeft een eigen pagina met kaart (zie de knoppen op index.html).
 (function(){
-  var map = window.__nlMap;
-  if (!map || !window.WDK) return;
+  if (!window.WDK) return;
 
   // Alle berekeningen (tellingen, tabel, grafiek, verwachting) komen uit assets/site.js.
   // Een nieuwe diersoort verschijnt hier vanzelf zodra hij in WDK.SPECIES staat en zijn databestand geladen is.
@@ -13,76 +13,16 @@
   });
   if (!SPECIES.length) return;
 
-  function popupHtml(species, b){
-    var html = '<div class="tt-name">'+species.emoji+' '+nameHtml(b.n)+'</div>';
-    Object.keys(b.c).forEach(function(k){
-      if (b.c[k]) html += '<div class="tt-row"><span>'+(TYPE_LABEL[k]||k)+'</span><span>'+b.c[k]+'</span></div>';
-    });
-    var recent = b.ev.slice(0,5);
-    if (recent.length){
-      html += '<div class="tt-dates">' + recent.map(function(e){
-        return '<div class="date-row">'+fmtDate(e.d)+' &middot; '+(e.diersoort ? WDK.esc(e.diersoort)+' &middot; ' : '')+(TYPE_LABEL[e.ty]||e.ty)+WDK.victimsLabel(e)+'</div>';
-      }).join('') + (b.ev.length>5 ? '<div>+ '+(b.ev.length-5)+' eerdere</div>' : '') + '</div>';
-    }
-    html += '<div class="tt-dates"><a href="'+species.page+'">Bekijk op de '+species.mapName+'</a></div>';
-    return html;
-  }
-
-  // ---- legenda: kleurcode van de bolletjes (het filter op soort zit in het paneel "Filter & tijd") ----
-  var togglesEl = document.getElementById('mapLegend');
+  // ---- legenda van de grafiek: kleurcode per diersoort ----
   var chartLegendEl = document.getElementById('chartLegend');
-  SPECIES.forEach(function(species){
-    if (chartLegendEl){
-      chartLegendEl.insertAdjacentHTML('beforeend', '<div class="legend-group"><span class="swatch" style="background:'+species.color+'"></span>'+species.label+'</div>');
-    }
-    if (!togglesEl) return;
-    var item = document.createElement('div');
-    item.className = 'legend-group';
-    item.innerHTML = '<span class="swatch" style="background:'+species.color+'"></span>'+species.label;
-    togglesEl.appendChild(item);
-    species.legendItem = item;
-  });
-
-  // ---- filterbalk: soort, type, periode, tijdschuif (afspelen), hitte-laag; de stand staat ook in de URL ----
-  var EX = WDK.mountExplorer({
-    el:document.getElementById('explorer'), map:map, species:SPECIES, onChange:renderMap, heat:false, dots:false, // hitte-laag en bolletjes-schakelaar alleen op de soortpagina's
-    rows: SPECIES.reduce(function(all, s){ return all.concat(s.rows); }, [])
-  });
-  window.__nlExplorer = EX;
-  // bolletjes die dicht bij elkaar liggen (binnen 5 km) worden één cluster; hoort het cluster bij één soort, dan krijgt het die kleur
-  var CL = WDK.clusterLayer(map, { clusterColor: function(list){
-    var c = list[0].color;
-    return list.every(function(it){ return it.color === c; }) ? c : WDK.CLUSTER_MIXED_COLOR;
-  } });
-  window.__nlCluster = CL;
-
-  // tekent de bolletjes opnieuw voor het huidige filter (en geeft de punten door aan de hitte-laag)
-  function renderMap(){
-    var f = EX.get();
-    var visible = f.soort || SPECIES.map(function(s){ return s.key; });
-    var latest = null, total = 0, places = 0, items = [];
+  if (chartLegendEl){
     SPECIES.forEach(function(species){
-      var on = visible.indexOf(species.key) > -1;
-      if (species.legendItem) species.legendItem.style.opacity = on ? '' : '.45'; // uitgezette soort dimmen in de legenda
-      if (!on) return;
-      var rows = WDK.applyFilter(species.rows, species.key, f);
-      var pm = WDK.placeMarkers(rows, {
-        color:function(){ return species.color; },
-        popup:function(b){ return popupHtml(species, b); },
-        radius:[5, 16], weight:1.2,
-        id:function(b){ return species.key + '::' + b.id; }
-      });
-      items = items.concat(pm.items);
-      rows.forEach(function(b){ total += b.t; places++; });
-      if (pm.latest && (!latest || pm.latest.ev[0].d > latest.b.ev[0].d)) latest = { b:pm.latest, id:pm.latestId };
+      chartLegendEl.insertAdjacentHTML('beforeend', '<div class="legend-group"><span class="swatch" style="background:'+species.color+'"></span>'+species.label+'</div>');
     });
-    CL.setItems(items, { halo: latest && latest.id });
-    EX.setSummary(total, places);
   }
-  renderMap();
 
-  // ---- "net binnen gekomen meldingen" tabel: de RECENT_MAX meest recente meldingen over alle soorten (het venster scrolt) ----
-  var RECENT_MAX = 25;
+  // ---- "net binnen gekomen meldingen" tabel: de RECENT_MAX meest recente meldingen over alle soorten (geen scrollvenster) ----
+  var RECENT_MAX = 10; // houd gelijk aan RECENT_MAX in render_home_page (tools/seatable_sync.py)
   var events = [];
   SPECIES.forEach(function(species){
     WDK.events(species.rows, species).forEach(function(e){ events.push(e); });

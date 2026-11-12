@@ -743,7 +743,7 @@ def stat_note_html(outside, where, attacks):
         n = outside['byType']['aanval']
         if attacks and n:
             txt += ', waarvan %d %s op vee' % (n, 'aanval' if n == 1 else 'aanvallen')
-        txt += ' (zie de <a href="./">landelijke kaart</a>).'
+        txt += '.'
     return txt
 
 
@@ -793,7 +793,7 @@ def render_home_page(root, species_data, warn):
     if not path.exists():
         return False
     html = original = path.read_text(encoding='utf-8')
-    RECENT_MAX = 15
+    RECENT_MAX = 10  # gelijk aan RECENT_MAX in assets/home-stats.js
     events, updates = [], []
     for key, data in species_data.items():
         if not data:
@@ -832,7 +832,7 @@ def render_home_page(root, species_data, warn):
     else:
         text = 'Nog geen meldingen toegevoegd.'
     html = stat_set(html, 'updated', text, warn)
-    html = stat_set(html, 'noscript', text + ' Schakel JavaScript in voor de kaart en de filters.', warn)
+    html = stat_set(html, 'noscript', text + ' Schakel JavaScript in voor de meldingen en grafieken.', warn)
     if html == original:
         return False
     path.write_text(html, encoding='utf-8')
