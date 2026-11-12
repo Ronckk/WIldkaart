@@ -127,6 +127,13 @@ kolom `Type` mag dat overschrijven. `Tijd`, `Regio` en `Plaats` mogen erbij als 
   tellen samen. Zet je `"position": "town"`, dan komt er één stip per plaats op het middelpunt van die plaats: geen
   exacte GPS-locatie op de kaart (de voettekst van de site belooft dat nu niet meer bij "exact"; bij aanvallen op vee
   verraadt een exacte stip de plek van het bedrijf).
+- **Aanvallen op vee (privacy):** de site toont van een aanval nooit de exacte plek. Twee lagen: (1) het meldformulier
+  (`melden.html`/`assets/melden.js`) vraagt bij `?type=aanval` alleen een woonplaats (PDOK, middelpunt wordt ingevuld);
+  (2) de sync (`anonymize_attacks` in `tools/seatable_sync.py`) zet elke aanval, wat er ook is ingevuld, op het middelpunt van
+  de woonplaats vóór er iets wordt opgeslagen. Exacte aanvalspunten komen niet in `tools/place-cache.json` of
+  `tools/gemeente-cache.json` (`forget_attack_points`). Is er geen woonplaats te vinden, dan wordt de plek afgerond op
+  ~10 km en geeft de sync een waarschuwing. Let op: staat een exact punt al in oudere commits, dan blijft het in de
+  git-geschiedenis staan; de SeaTable-tabel zelf is alleen voor de beheerder zichtbaar.
 - **Veluwe of elders:** volgt uit een `Regio`-kolom, anders uit de rechthoek `veluwe_bbox` in de config (die
   reproduceert de oude indeling precies).
 - **Vee:** de kaarten "Welk vee wordt aangevallen?" en "Hoeveel vee is daadwerkelijk gedood?" op de wolvenpagina worden

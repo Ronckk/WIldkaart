@@ -386,6 +386,11 @@ def pdok_reverse(lat, lon, max_distance):
     return {'name': docs[0].get('woonplaatsnaam'), 'lat': float(c.group(2)) if c else None, 'lon': float(c.group(1)) if c else None}
 
 
+def point_key(lat, lon):
+    """Sleutel van een punt in tools/place-cache.json en tools/gemeente-cache.json."""
+    return '%.4f,%.4f' % (lat, lon)
+
+
 class PlaceLookup:
     """Zoekt plaatsnamen op uit coördinaten en onthoudt de antwoorden (tools/place-cache.json), zodat elk punt maar één keer
     bij PDOK wordt opgevraagd."""
@@ -406,8 +411,10 @@ class PlaceLookup:
                 del self.cache[k]
             self.dirty = bool(stale)
 
-    def get(self, lat, lon):
-        key = '%.4f,%.4f' % (lat, lon)  # ~11 m: dichterbij dan de plaatsgrenzen ooit uit elkaar liggen
+    def get(self, lat, lon, persist=True):
+        """persist=False: het antwoord blijft alleen in het geheugen van deze run en komt nooit in tools/place-cache.json.
+        Voor de exacte plek van een aanval op vee (zie anonymize_attacks): die mag nergens in de repo terechtkomen."""
+        key = point_key(lat, lon)  # ~11 m: dichterbij dan de plaatsgrenzen ooit uit elkaar liggen
         if key in self.cache:
             return self.cache[key]
         if key in self.negative:
@@ -421,11 +428,11 @@ class PlaceLookup:
                 self.errors.append(str(e))
             return None
         self.fetched += 1
-        if res.get('name'):
+        if res.get('name') and persist:
             self.cache[key] = res
             self.dirty = True
         else:
-            self.negative[key] = res
+            self.negative[key] = res  # alleen voor deze run
         time.sleep(0.05)
         return res
 
@@ -517,6 +524,42 @@ def resolve_places(recs, lookup, warn, need_town_center=False):
         warn('Plaatsnaam opzoeken lukte niet (%s). Betreffende meldingen staan als "%s"; draai het script later opnieuw.' % (e, UNKNOWN_PLACE))
     if outside:
         warn('%d melding(en) liggen niet bij een Nederlandse woonplaats (>%d m) en staan als "%s".' % (outside, lookup.max_distance, UNKNOWN_PLACE))
+
+
+def anonymize_attacks(recs, lookup, warn):
+    """Een aanval op vee komt nooit met een exacte plek op de site, alleen met de woonplaats: zo kan niemand de getroffen
+    boer opzoeken. De stip komt op het middelpunt van de woonplaats (PDOK) en meldingen in dezelfde plaats vormen samen één
+    stip. Dit gebeurt hier, bij het publiceren, en dus ook voor rijen waar een bezoeker (of een oud formulier) toch een
+    exacte plek invulde. Zichtmeldingen houden hun exacte plek.
+    Kan de woonplaats niet worden bepaald (PDOK-storing, buiten Nederland), dan wordt de plek afgerond op 0,1 graad (~10 km):
+    liever grof dan exact. -> de sleutels van de oorspronkelijke, exacte punten (die horen niet in de caches)."""
+    exact_keys, rough = set(), 0
+    for r in recs:
+        if r['ty'] != 'aanval' or r['lat'] is None or r['lon'] is None:
+            continue
+        exact_keys.add(point_key(r['lat'], r['lon']))
+        res = lookup.get(r['lat'], r['lon'], persist=False)
+        if res and res.get('name') and res.get('lat') is not None:
+            r['lat'], r['lon'], r['place'] = res['lat'], res['lon'], res['name']
+        else:
+            r['lat'], r['lon'] = round(r['lat'], 1), round(r['lon'], 1)
+            r['place'] = r['place'] or UNKNOWN_PLACE
+            rough += 1
+    if rough:
+        warn('%d aanval(len) hebben geen herkenbare woonplaats; hun plek is afgerond op ~10 km in plaats van het dorpsmiddelpunt.' % rough)
+    return exact_keys
+
+
+def forget_attack_points(lookups, attack_keys, other_keys):
+    """Haalt de exacte punten van aanvallen uit de caches (tools/place-cache.json, tools/gemeente-cache.json), tenzij een
+    zichtmelding precies hetzelfde punt heeft: die plek is toch al openbaar."""
+    drop = set(attack_keys) - set(other_keys)
+    for lk in lookups:
+        gone = [k for k in drop if k in lk.cache]
+        for k in gone:
+            del lk.cache[k]
+        if gone:
+            lk.dirty = True
 
 
 # ---------------------------------------------------------------- gebeurtenissen -> plaatsen -> bestanden
@@ -914,12 +957,16 @@ def cmd_sync(sea, cfg, root, dry, force):
         recs.extend(got)
     lcfg = cfg.get('place_lookup', {})
     lookup = PlaceLookup(root / 'tools' / 'place-cache.json', lcfg.get('max_distance_m', 5000), lcfg.get('enabled', True))
+    other_keys = {point_key(r['lat'], r['lon']) for r in recs if r['ty'] != 'aanval' and r['lat'] is not None and r['lon'] is not None}
+    attack_keys = anonymize_attacks(recs, lookup, warn)   # aanvallen: alleen de woonplaats, nooit een exacte plek
     resolve_places(recs, lookup, warn, cfg.get('position', 'exact') == 'town')
+    forget_attack_points([lookup], attack_keys, other_keys)
     lookup.save()
     if lookup.fetched:
         print('Plaatsnamen opgezocht bij PDOK: %d nieuwe punten (de rest kwam uit tools/place-cache.json)' % lookup.fetched)
     gemeenten = GemeenteLookup(root / 'tools' / 'gemeente-cache.json', lcfg.get('enabled', True))
     resolve_gemeenten(recs, gemeenten, warn)
+    forget_attack_points([gemeenten], attack_keys, other_keys)
     gemeenten.save()
     if gemeenten.fetched:
         print('Gemeenten opgezocht bij PDOK: %d nieuwe punten (de rest kwam uit tools/gemeente-cache.json)' % gemeenten.fetched)

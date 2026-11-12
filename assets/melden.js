@@ -1,6 +1,9 @@
 // Pagina "Meld een waarneming" (melden.html): de bezoeker kiest de plek op de kaart of met GPS en gaat daarna naar het
 // SeaTable-formulier met de coördinaten al ingevuld (WDK.FORMS en WDK.PREFILL in assets/site.js). Alles gebeurt in de browser:
 // er is geen server en geen token; de plek reist alleen mee in het adres van het formulier.
+// Bij een AANVAL op vee kiest de bezoeker alleen een plaats of dorp (geen kaart, geen GPS): er gaat het middelpunt van die
+// plaats naar het formulier, nooit een exacte plek. Zo kan niemand de getroffen boer opzoeken. (De sync zet aanvallen ook zelf
+// op het dorpsmiddelpunt, voor het geval iemand het formulier toch met een exacte plek invult: tools/seatable_sync.py.)
 (function(){
   var WDK = window.WDK;
   var PDOK = 'https://api.pdok.nl/bzk/locatieserver/search/v3_1/';
@@ -26,6 +29,17 @@
       if (on && focus) b.focus();
     });
     $('plainLink').href = WDK.FORMS[t].url;
+    // aanval: alleen een plaats kiezen (geen kaart); een eerder gekozen plek hoort niet mee naar het andere formulier
+    var townOnly = t === 'aanval';
+    $('mapCard').hidden = townOnly;
+    $('townCard').hidden = !townOnly;
+    pos = null;
+    if (marker){ map.removeLayer(marker); marker = null; }
+    clearAccuracy();
+    picked.textContent = 'Nog geen plek gekozen.';
+    $('townPicked').textContent = 'Nog geen plaats gekozen.';
+    $('townSearch').value = '';
+    if (!townOnly) setTimeout(function(){ map.invalidateSize(); }, 0); // de kaart was verborgen en heeft zijn formaat nodig
     if (window.history && window.history.replaceState){
       try {
         var url = new URL(window.location.href);
@@ -107,13 +121,20 @@
     goBtn.classList.toggle('is-disabled', !ready);
     goBtn.setAttribute('aria-disabled', ready ? 'false' : 'true');
     if (ready) goBtn.href = formUrl(); else goBtn.removeAttribute('href');
+    var townOnly = type === 'aanval';
     goHint.textContent = ready
-      ? 'Je gaat naar het formulier “' + WDK.FORMS[type].label + '”. De plek is al ingevuld; jij geeft nog het dier en de datum door.'
-      : 'Kies eerst een plek op de kaart.';
+      ? 'Je gaat naar het formulier “' + WDK.FORMS[type].label + '”. De ' + (townOnly ? 'plaats' : 'plek') + ' is al ingevuld; jij geeft nog het ' +
+        (townOnly ? 'vee, het aantal en de datum' : 'dier en de datum') + ' door.'
+      : (townOnly ? 'Kies eerst de plaats waar het was.' : 'Kies eerst een plek op de kaart.');
   }
   goBtn.addEventListener('click', function(ev){
     if (pos) return;
     ev.preventDefault();
+    if (type === 'aanval'){
+      goHint.textContent = 'Kies eerst de plaats waar het was, dan kun je verder.';
+      $('townSearch').scrollIntoView({ behavior:'smooth', block:'center' });
+      return;
+    }
     goHint.textContent = 'Kies eerst een plek op de kaart, dan kun je verder.';
     $('map').scrollIntoView({ behavior:'smooth', block:'center' });
   });
@@ -169,6 +190,33 @@
   WDK.mountSearch({ input:$('placeSearch'), results:$('searchResults'), find:findPlaces, debounce:300,
     error:'Zoeken lukt nu niet. Verplaats de kaart zelf, of gebruik je locatie.',
     onSelect:function(item){ map.flyTo([item.lat, item.lon], item.zoom, { duration:0.6 }); } });
+
+  // ---------------------------------------------------------------- aanval: alleen de plaats of het dorp
+  // Er gaat het middelpunt van de gekozen plaats naar het formulier (PDOK), nooit een exacte plek.
+  function findTowns(q){
+    return fetch(PDOK + 'free?rows=8&fl=weergavenaam,centroide_ll,type&fq=' + encodeURIComponent('type:woonplaats') + '&q=' + encodeURIComponent(q))
+      .then(function(r){ return r.json(); }).then(function(j){
+        return ((j.response && j.response.docs) || []).map(function(d){
+          var m = /POINT\(([-\d.]+) ([-\d.]+)\)/.exec(d.centroide_ll || '');
+          return m ? { key:d.weergavenaam, label:d.weergavenaam, name:WDK.esc(d.weergavenaam), meta:'Plaats',
+            lat:parseFloat(m[2]), lon:parseFloat(m[1]) } : null;
+        }).filter(Boolean);
+      });
+  }
+  WDK.mountSearch({ input:$('townSearch'), results:$('townResults'), find:findTowns, debounce:300,
+    empty:function(q){ return 'Geen plaats gevonden voor &ldquo;' + WDK.esc(q) + '&rdquo;. Probeer de naam van het dorp.'; },
+    error:'Zoeken lukt nu niet. Probeer het over een minuut opnieuw.',
+    onSelect:function(item){
+      pos = { lat: Math.round(item.lat * 1e6) / 1e6, lon: Math.round(item.lon * 1e6) / 1e6 };
+      $('townPicked').innerHTML = 'Gekozen plaats: <b class="mp-place">' + item.name + '</b>';
+      updateGo();
+    } });
+  $('townSearch').addEventListener('input', function(){ // een nieuwe zoekopdracht wist de gekozen plaats
+    if (!pos) return;
+    pos = null;
+    $('townPicked').textContent = 'Nog geen plaats gekozen.';
+    updateGo();
+  });
 
   setType(type);
 })();

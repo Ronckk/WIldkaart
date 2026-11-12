@@ -135,6 +135,16 @@ class SyncTest(unittest.TestCase):
                        'rows': csv_rows(exp / 'aanval.csv')},
         }
         self.verified()
+        # Aanvallen komen alleen met hun woonplaats op de site (anonymize_attacks). Deze stub geeft elk punt van het oude
+        # bestand zijn eigen plaatsnaam en hetzelfde punt terug, zodat het rondje de oorspronkelijke data blijft reproduceren.
+        known = {(round(float(r['Latitude']), 4), round(float(r['Longitude']), 4)): r['Plaats'] for r in Mock.tables['aanval']['rows']}
+
+        def fake(lat, lon, d):
+            key = (round(lat, 4), round(lon, 4))
+            if key not in known:
+                raise AssertionError('onverwachte PDOK-aanroep')
+            return {'name': known[key], 'lat': lat, 'lon': lon}
+        sync.pdok_reverse = fake
 
     # ------------------------------------------------------------ rondje: origineel -> SeaTable -> origineel
     def test_roundtrip_reproduces_current_data(self):
@@ -254,10 +264,11 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(self.run_sync('--force'), 0)
         data, wolf = self.places('wolven-data.js')
         ermelo = sorted((b for b in wolf if b['n'] == 'Ermelo'), key=lambda b: b['lat'])
-        self.assertEqual(len(ermelo), 2)                                     # twee exacte punten in dezelfde plaats = twee bolletjes
-        self.assertEqual((ermelo[0]['lat'], ermelo[0]['lon']), (52.301537, 5.716819))   # exacte positie
-        self.assertEqual(ermelo[0]['ev'], [{'d': '2026-09-18', 'ty': 'zichtmelding', 'tm': '21:11'},
-                                           {'d': '2026-09-17', 'ty': 'aanval', 'tm': '23:10', 'dieren': [{'dier': 'Schaap', 'gedood': 3}]}])
+        self.assertEqual(len(ermelo), 3)                                     # twee exacte zichtpunten + de aanval op het dorpsmiddelpunt
+        self.assertEqual((ermelo[0]['lat'], ermelo[0]['lon']), (52.288, 5.666))        # de aanval: middelpunt van Ermelo, niet de exacte plek
+        self.assertEqual(ermelo[0]['ev'], [{'d': '2026-09-17', 'ty': 'aanval', 'tm': '23:10', 'dieren': [{'dier': 'Schaap', 'gedood': 3}]}])
+        self.assertEqual((ermelo[1]['lat'], ermelo[1]['lon']), (52.301537, 5.716819))  # een zichtmelding houdt de exacte positie
+        self.assertEqual(ermelo[1]['ev'], [{'d': '2026-09-18', 'ty': 'zichtmelding', 'tm': '21:11'}])
         abroad = [b for b in wolf if b['n'] == 'Onbekende locatie']
         self.assertEqual(len(abroad), 1)                                     # buiten NL: niet naar een verkeerd dorp
         _, zwijn = self.places('zwijnen-data.js')
@@ -272,7 +283,8 @@ class SyncTest(unittest.TestCase):
         self.assertGreater(n, 0)
         self.run_sync('--force')
         # tweede keer: alles uit tools/place-cache.json, behalve het punt buiten Nederland (een "niet gevonden" wordt nooit onthouden)
-        self.assertEqual(len(self.geocoded), n + 1)
+        # en de aanval (de exacte plek van een aanval komt bewust nooit in de cache, zie anonymize_attacks)
+        self.assertEqual(len(self.geocoded), n + 2)
 
     def test_town_mode_puts_one_dot_on_the_town_centre(self):
         self.real_layout()
@@ -774,6 +786,74 @@ class SyncTest(unittest.TestCase):
         self.assertNotIn('class="stat"', p.read_text())
         self.assertEqual(sync.main(['--config', str(self.cfg_path), '--root', str(self.tmp), '--stamp']), 0)
         self.assertIn('class="stat"', p.read_text())
+
+    # ------------------------------------------------------------ aanvallen: alleen de woonplaats, nooit een exacte plek
+    def attack_tables(self, rows_aanval):
+        loc = lambda lat, lng: {'lat': lat, 'lng': lng}
+        Mock.tables = {
+            'Zichtmeldingen': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), ('Verificatie', 'checkbox')],
+                               'rows': [{'Dier': 'Wolf', 'Datum': '2026-09-10', 'Locatie': loc(52.3077, 5.7123), 'Verificatie': True}]},
+            'Aanval': {'columns': [('Dier', 'single-select'), ('Datum', 'date'), ('Locatie', 'geolocation'), ('Gedode dier', 'single-select'),
+                                   ('Aantal dood', 'number'), ('Verificatie', 'checkbox')],
+                       'rows': rows_aanval},
+        }
+
+    def test_attacks_only_get_the_town_never_the_exact_spot(self):
+        loc = lambda lat, lng: {'lat': lat, 'lng': lng}
+        self.attack_tables([
+            {'Dier': 'Wolf', 'Datum': '2026-09-17', 'Locatie': loc(52.30421, 5.71899), 'Gedode dier': 'Schaap', 'Aantal dood': 3, 'Verificatie': True},
+            {'Dier': 'Wolf', 'Datum': '2026-09-20', 'Locatie': loc(52.29177, 5.70246), 'Gedode dier': 'Ram', 'Aantal dood': 2, 'Verificatie': True},
+        ])
+        sync.pdok_reverse = lambda lat, lon, d: {'name': 'Ermelo', 'lat': 52.288, 'lon': 5.666}
+        self.assertEqual(self.run_sync('--force'), 0)
+        _, wolf = self.places('wolven-data.js')
+        attacks = [b for b in wolf if any(e['ty'] == 'aanval' for e in b['ev'])]
+        self.assertEqual(len(attacks), 1)                                            # twee aanvallen in één plaats = één stip
+        self.assertEqual((attacks[0]['n'], attacks[0]['lat'], attacks[0]['lon']), ('Ermelo', 52.288, 5.666))
+        self.assertEqual(sorted(d['dier'] for e in attacks[0]['ev'] for d in e['dieren']), ['Ram', 'Schaap'])   # het vee blijft zichtbaar
+        zicht = [b for b in wolf if any(e['ty'] == 'zichtmelding' for e in b['ev'])]
+        self.assertEqual((zicht[0]['lat'], zicht[0]['lon']), (52.3077, 5.7123))      # een zichtmelding houdt de exacte plek
+        # nergens in de repo-bestanden staat de exacte plek van een aanval
+        for f in ('data/wolven-data.js', 'tools/place-cache.json', 'tools/gemeente-cache.json'):
+            if not (self.tmp / f).exists():
+                continue                                                         # (de gemeente-cache blijft leeg zonder PDOK-antwoord)
+            text = (self.tmp / f).read_text(encoding='utf-8')
+            for exact in ('52.30421', '5.71899', '52.29177', '5.70246', '52.3042,5.7190', '52.2918,5.7025'):
+                self.assertNotIn(exact, text, f)
+
+    def test_exact_attack_points_are_removed_from_the_caches(self):
+        loc = lambda lat, lng: {'lat': lat, 'lng': lng}
+        self.attack_tables([{'Dier': 'Wolf', 'Datum': '2026-09-17', 'Locatie': loc(52.30421, 5.71899), 'Gedode dier': 'Schaap',
+                             'Aantal dood': 1, 'Verificatie': True}])
+        sync.pdok_reverse = lambda lat, lon, d: {'name': 'Ermelo', 'lat': 52.288, 'lon': 5.666}
+        entry = {'name': 'Ermelo', 'lat': 52.288, 'lon': 5.666}
+        (self.tmp / 'tools').mkdir(exist_ok=True)
+        # uit een eerdere sync (van vóór deze regel): de exacte aanvalsplek, en de plek van de zichtmelding
+        (self.tmp / 'tools' / 'place-cache.json').write_text(json.dumps({'52.3042,5.7190': entry, '52.3077,5.7123': entry}))
+        (self.tmp / 'tools' / 'gemeente-cache.json').write_text(json.dumps({'52.3042,5.7190': 'Ermelo', '52.3077,5.7123': 'Ermelo'}))
+        self.assertEqual(self.run_sync('--force'), 0)
+        for f in ('place-cache.json', 'gemeente-cache.json'):
+            keys = set(json.loads((self.tmp / 'tools' / f).read_text()))
+            self.assertNotIn('52.3042,5.7190', keys, f)                               # de aanvalsplek is eruit
+            self.assertIn('52.3077,5.7123', keys, f)                                  # de zichtmelding blijft
+
+    def test_attack_with_unknown_town_is_rounded_not_exact(self):
+        loc = lambda lat, lng: {'lat': lat, 'lng': lng}
+        self.attack_tables([{'Dier': 'Wolf', 'Datum': '2026-09-17', 'Locatie': loc(52.30421, 5.71899), 'Gedode dier': 'Schaap',
+                             'Aantal dood': 1, 'Verificatie': True}])
+
+        def down(lat, lon, d):
+            raise sync.SyncError('Geen verbinding met PDOK: nep')
+        sync.pdok_reverse = down
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            self.assertEqual(self.run_sync('--force'), 0)
+        _, wolf = self.places('wolven-data.js')
+        attack = [b for b in wolf if any(e['ty'] == 'aanval' for e in b['ev'])][0]
+        self.assertEqual((attack['lat'], attack['lon']), (52.3, 5.7))                # liever grof dan exact
+        self.assertIn('afgerond', buf.getvalue())
 
 
 if __name__ == '__main__':

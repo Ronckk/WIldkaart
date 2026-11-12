@@ -1,5 +1,8 @@
 /* Opmaak van de pagina "Meld een waarneming" (melden.html), bovenop species.css en map-tools.css. */
 
+/* de kaarten hebben een eigen display, dus [hidden] moet er expliciet winnen */
+#mapCard[hidden], #townCard[hidden]{ display:none; }
+
 .map-card > .mp-title{ margin:6px 4px 4px; }
 .map-card > .mp-lead{ margin:0 4px 14px; }
 
