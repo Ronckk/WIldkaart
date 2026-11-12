@@ -360,3 +360,17 @@ CARTO's gratis laag is bedoeld voor precies dit soort projecten en heeft een rui
 OSM-tegelserver, maar bij serieus veel verkeer is het gebruikelijk om over te stappen op een betaalde
 tile-provider (bv. MapTiler, Stadia Maps, Mapbox) of een eigen tile-server. Voor een schoolproject met
 bescheiden bezoekersaantallen is dit ruim voldoende.
+
+## Voorspelling (voorspelling.html)
+
+De pagina onder Wolven → Voorspelling laat zien waar de komende 7 dagen de meeste wolvenmeldingen worden verwacht.
+Het model staat in `assets/risk-model.js` (`WDK.risk`, alle aannames in `PARAMS`), de pagina in
+`assets/voorspelling-page.js`. Het is een dichtheidsschatting, geen AI: meldingen tellen mee met een gewicht naar type
+(aanval 2, jonkies 1,5, zicht 1, overig 0,5), dat elke 21 dagen halveert, en stralen ~6 km uit over vakken van 5 × 5 km.
+Het resultaat is per vak een aandeel van de verwachte meldingen; de vakken met samen 30% / 60% / 85% van de kans zijn het
+kern-, waarschijnlijke en ruime gebied. De pagina toetst het model ook aan het verleden (`WDK.risk.backtest`: voor elke
+week terug alleen de meldingen tot dan toe gebruiken en kijken hoeveel van de echte meldingen in de gekleurde vakken
+vielen), zodat de kaart eerlijk blijft als het model slecht scoort. Een vak is 5 km breed, en aanvallen staan al op het
+middelpunt van de woonplaats (zie "Aanvallen op vee (privacy)"), dus de kaart verraadt geen bedrijf. Er zijn (nog) geen
+gegevens over schapen of landschap in het model. Tests: `node tools/test_risk_model.js` (draait ook via
+`python3 tools/test_risk_model.py` en in de GitHub-tests).

@@ -18,3 +18,4 @@ jobs:
           python-version: '3.12'
       - run: python3 tools/test_seatable_sync.py
       - run: python3 tools/test_site_seo.py
+      - run: python3 tools/test_risk_model.py

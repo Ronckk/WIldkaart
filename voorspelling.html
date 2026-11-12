@@ -4,18 +4,37 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>(function(){try{var t=localStorage.getItem('wolvenkaart-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
-<title>Voorspelling wolven | Wilde Dieren in Kaart</title>
-<meta name="description" content="Voorspelling voor wolvenmeldingen op de Veluwe en in de rest van Nederland. Deze pagina wordt nog opgebouwd.">
-<meta name="robots" content="noindex,follow">
+<title>Voorspelling wolf: waar de komende week? | Wilde Dieren in Kaart</title>
+<meta name="description" content="Waar worden de komende week wolvenmeldingen verwacht? Kaart op basis van alle gecontroleerde meldingen, met uitleg en een terugtoets van het model.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://wildkaart.rlode.nl/voorspelling">
+<meta property="og:url" content="https://wildkaart.rlode.nl/voorspelling">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Wilde Dieren in Kaart">
+<meta property="og:title" content="Voorspelling wolf: waar de komende week? | Wilde Dieren in Kaart">
+<meta property="og:description" content="Waar worden de komende week wolvenmeldingen verwacht? Kaart op basis van alle gecontroleerde meldingen, met uitleg en een terugtoets van het model.">
+<meta property="og:image" content="https://wildkaart.rlode.nl/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Wilde Dieren in Kaart: kaart met meldingen van wolven en zwijnen">
+<meta property="og:locale" content="nl_NL">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Voorspelling wolf: waar de komende week? | Wilde Dieren in Kaart">
+<meta name="twitter:description" content="Waar worden de komende week wolvenmeldingen verwacht? Kaart op basis van alle gecontroleerde meldingen, met uitleg en een terugtoets van het model.">
+<meta name="twitter:image" content="https://wildkaart.rlode.nl/assets/og-image.png">
 <meta name="theme-color" content="#f5f5f3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Voorspelling wolf: waar de komende week?", "url": "https://wildkaart.rlode.nl/voorspelling", "inLanguage": "nl", "isPartOf": {"@type": "WebSite", "name": "Wilde Dieren in Kaart", "url": "https://wildkaart.rlode.nl/", "inLanguage": "nl"}, "breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://wildkaart.rlode.nl/"}, {"@type": "ListItem", "position": 2, "name": "Wolven", "item": "https://wildkaart.rlode.nl/wolven"}, {"@type": "ListItem", "position": 3, "name": "Voorspelling", "item": "https://wildkaart.rlode.nl/voorspelling"}]}}</script>
+<link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin>
+<link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="assets/map-tools.css">
 <link rel="stylesheet" href="assets/shell.css">
-<link rel="stylesheet" href="assets/text.css">
+<link rel="stylesheet" href="assets/species.css">
+<link rel="stylesheet" href="assets/voorspelling.css">
 </head>
 <body>
 <!-- shell:nav -->
@@ -42,10 +61,48 @@
 <!-- /shell:nav -->
 <main class="page">
   <header class="hero">
-    <p class="eyebrow">Wolven</p>
-    <h1>Voorspelling</h1>
+    <p class="eyebrow">Wolven &middot; Verwachting komende week</p>
+    <h1>Waar wordt de wolf de komende week gemeld?</h1>
+    <p class="sub">Op basis van alle gecontroleerde wolvenmeldingen rekent deze pagina uit in welke gebieden de komende zeven dagen de meeste kans is op een nieuwe melding. Het is een <b>indicatie</b>, geen zekerheid: een wolf houdt zich niet aan een voorspelling. Hoe het werkt en hoe goed het in het verleden klopte, staat verderop.</p>
   </header>
+  <noscript><div class="notice">Voor de kaart en de berekening op deze pagina is JavaScript nodig. De <a href="wolven">wolvenkaart</a> met alle meldingen werkt ook zonder.</div></noscript>
+
+  <section class="stats" id="stats"></section>
+
+  <section class="map-card">
+    <div class="map-wrap">
+      <div id="map" role="img" aria-label="Kaart van Nederland met de gebieden waar de komende week de meeste wolvenmeldingen worden verwacht"></div>
+      <div class="zoom-controls">
+        <button type="button" id="zoomIn" aria-label="Inzoomen">+</button>
+        <button type="button" id="zoomOut" aria-label="Uitzoomen">&minus;</button>
+        <button type="button" id="zoomReset" aria-label="Kaart resetten" style="font-size:12px;">&#8634;</button>
+      </div>
+    </div>
+    <div class="map-foot">
+      <div class="legend" id="riskLegend"></div>
+      <label class="risk-toggle"><input type="checkbox" id="showReports" checked> Toon de meldingen van de afgelopen 2 weken</label>
+    </div>
+  </section>
+
+  <section class="animal-card" id="areasCard"></section>
+
+  <section class="animal-card" id="backtestCard"></section>
+
+  <section class="animal-card prose" id="methodCard">
+    <h2 class="card-title">Zo werkt het</h2>
+    <ul>
+      <li><b>Meldingen met een gewicht.</b> Een aanval telt dubbel, een melding met jonkies anderhalf en een zichtmelding &eacute;&eacute;n keer. Na een aanval is zeker dat er een wolf was &eacute;n dat hij vee heeft gevonden, en daar komt hij vaak terug.</li>
+      <li><b>Nieuwe meldingen wegen zwaarder.</b> Het gewicht van een melding halveert elke 3 weken, want een wolf trekt rond.</li>
+      <li><b>Een melding straalt uit.</b> Een wolf legt makkelijk een paar kilometer af, dus ook vlak naast een melding is de kans hoog. Dat doen we met een zachte uitstraling van zo&rsquo;n 6 km.</li>
+      <li><b>Vakken van 5 &times; 5 km.</b> Per vak tellen we dit op en rekenen het om naar een aandeel van de verwachte meldingen. Het kerngebied (donker) bevat samen 30% van die kans, het waarschijnlijke gebied 60% en het ruimere gebied 85%.</li>
+    </ul>
+    <p><b>Wat het niet kan.</b> De kaart laat zien waar de laatste tijd veel is gemeld; plekken waar nog nooit iets is gemeld krijgt hij dus niet. Meldingen zeggen ook iets over waar mensen komen: in drukke gebieden is de kans op een melding hoger. Gegevens over schapen of landschap zijn niet meegenomen. Van aanvallen is, om de getroffen boeren te beschermen, alleen de plaats bekend; de kaart toont daarom nooit een exacte plek.</p>
+  </section>
+
+  <section class="animal-card" id="reportCta"></section>
+
 </main>
+
 <!-- shell:footer -->
 <footer class="site-footer"><div class="site-footer-inner">
     <div class="footer-cols">
@@ -58,6 +115,7 @@
         <ul>
           <li><a href="./">Home</a></li>
           <li><a href="wolven">Wolven</a></li>
+          <li><a href="voorspelling">Voorspelling wolf</a></li>
           <li><a href="zwijnen">Zwijnen</a></li>
           <li><a href="herten">Herten</a></li>
           <li><a href="overig">Overig</a></li>
@@ -87,6 +145,17 @@
     </div>
   </div></footer>
 <!-- /shell:footer -->
+
+<button id="backToTop" type="button" aria-label="Naar boven">&uarr;</button>
+
+<script src="data/wolven-data.js"></script>
+<script src="assets/site.js"></script>
+<script src="assets/risk-model.js"></script>
+<script src="assets/vendor/leaflet/leaflet.js"></script>
+<script src="assets/map-base.js"></script>
 <script src="assets/theme.js"></script>
+<script src="assets/voorspelling-page.js"></script>
+<script src="assets/back-to-top.js"></script>
+<script>if (window.WDK) WDK.renderReportCta(document.getElementById('reportCta'), { species:'wolf' });</script>
 </body>
 </html>

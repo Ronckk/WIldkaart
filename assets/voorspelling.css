@@ -1,0 +1,17 @@
+/* Voorspellingspagina (voorspelling.html): legenda, schakelaar en tabel van de terugtoets. Rest van de opmaak: assets/species.css. */
+.prose p{ margin:0; max-width:68ch; font-size:15px; line-height:1.65; color:var(--ink-2); }
+.prose p + p{ margin-top:10px; }
+.prose p b, .prose li b{ color:var(--ink); font-weight:600; }
+.prose ul{ margin:0 0 12px; padding-left:20px; max-width:68ch; display:flex; flex-direction:column; gap:8px; font-size:15px; line-height:1.6; color:var(--ink-2); }
+.prose a{ color:var(--ink); text-underline-offset:2px; }
+
+.risk-swatch{ width:14px; height:14px; border-radius:3px; display:inline-block; flex:none; }
+.risk-toggle{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-2); cursor:pointer; }
+.risk-toggle input{ accent-color:var(--accent); }
+
+.risk-table{ width:100%; max-width:560px; border-collapse:collapse; font-size:14px; color:var(--ink-2); }
+.risk-table th{ text-align:left; font-weight:500; font-size:12px; letter-spacing:.04em; color:var(--muted); padding:6px 10px 6px 0; border-bottom:1px solid var(--border); }
+.risk-table td{ padding:9px 10px 9px 0; border-bottom:1px solid var(--border); }
+.risk-table td.num, .risk-table th.num{ text-align:right; padding-right:0; font-variant-numeric:tabular-nums; }
+.risk-table td b{ color:var(--ink); }
+.risk-popup .tt-sub{ font-size:12px; color:var(--muted); margin-top:4px; }

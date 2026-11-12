@@ -87,6 +87,7 @@ def footer_html(notes):
         <ul>
           <li><a href="./">Home</a></li>
           <li><a href="wolven">Wolven</a></li>
+          <li><a href="voorspelling">Voorspelling wolf</a></li>
           <li><a href="zwijnen">Zwijnen</a></li>
           <li><a href="herten">Herten</a></li>
           <li><a href="overig">Overig</a></li>

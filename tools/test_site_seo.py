@@ -15,11 +15,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BASE = 'https://wildkaart.rlode.nl/'
-INDEXABLE = {'index.html': '', 'wolven.html': 'wolven', 'zwijnen.html': 'zwijnen', 'herten.html': 'herten', 'overig.html': 'overig', 'over.html': 'over', 'melden.html': 'melden'}
+INDEXABLE = {'index.html': '', 'wolven.html': 'wolven', 'zwijnen.html': 'zwijnen', 'herten.html': 'herten', 'overig.html': 'overig', 'voorspelling.html': 'voorspelling', 'over.html': 'over', 'melden.html': 'melden'}
 
 
-# pagina's die nog leeg zijn: wel in menu en publicatie, maar (nog) niet voor zoekmachines en niet in de sitemap
-NOINDEX = ['voorspelling.html']
+NOINDEX = []     # pagina's die in menu en publicatie staan maar (nog) niet voor zoekmachines bedoeld zijn
 
 
 def read(name):
@@ -96,12 +95,12 @@ class SeoTest(unittest.TestCase):
         self.assertNotRegex(r, r'(?m)^Disallow:\s*/\s*$')
 
     def test_internal_links_and_anchors_exist(self):
-        pages = {'', 'wolven', 'zwijnen', 'overig', 'over', 'melden'}
+        pages = {'', 'wolven', 'zwijnen', 'overig', 'over', 'melden', 'voorspelling'}
         over_ids = set(re.findall(r'id="([^"]+)"', read('over.html')))
         scripts = sorted(str(f.relative_to(ROOT)) for f in (ROOT / 'assets').glob('*.js'))
         for name in list(INDEXABLE) + ['404.html'] + scripts:
             text = read(name)
-            for href in re.findall(r'href="((?:\./|wolven|zwijnen|overig|over|melden)[^"]*)"', text.replace('\\"', '"')):
+            for href in re.findall(r'href="((?:\./|wolven|zwijnen|overig|over|melden|voorspelling)[^"]*)"', text.replace('\\"', '"')):
                 path, _, frag = href.partition('#')
                 path = path.partition('?')[0]     # 'melden?type=aanval' is de pagina 'melden'
                 with self.subTest(page=name, href=href):
@@ -145,14 +144,12 @@ class SeoTest(unittest.TestCase):
         r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'build_shell.py'), '--check'], capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
-    def test_blank_forecast_page_is_published_but_not_indexed(self):
+    def test_forecast_page_loads_the_model_and_its_data(self):
         s = read('voorspelling.html')
-        self.assertIn('noindex', meta(s, 'name', 'robots'))
-        self.assertNotIn('rel="canonical"', s)
-        self.assertEqual(len(re.findall(r'<h1[ >]', s)), 1)
+        for src in ('data/wolven-data.js', 'assets/site.js', 'assets/risk-model.js', 'assets/vendor/leaflet/leaflet.js', 'assets/voorspelling-page.js'):
+            self.assertIn('src="%s' % src, s, src)
+        self.assertTrue(s.index('assets/site.js') < s.index('assets/risk-model.js') < s.index('assets/voorspelling-page.js'))
         self.assertIn('voorspelling.html', read('.github/workflows/site.yml'))
-        self.assertNotIn('voorspelling', read('sitemap.xml'))
-        self.assertIn('href="assets/shell.css"', s)
 
     def test_wolven_submenu_links_to_the_forecast_page_on_every_page(self):
         for page in list(INDEXABLE) + ['404.html'] + NOINDEX:
