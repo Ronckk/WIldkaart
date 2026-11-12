@@ -32,6 +32,43 @@ body{ margin:0; }
 .site-header .nav-link:focus-visible,
 .site-header .theme-toggle:focus-visible{ outline:2px solid var(--bar-ink); outline-offset:2px; }
 
+/* submenu onder een hoofditem (nu: Wolven > Voorspelling). Het uitklapmenu staat 'fixed' en wordt door assets/theme.js onder het
+   item gezet, zodat het ook op een telefoon niet wordt afgeknipt door het scrollende menu. */
+.site-header .nav-item{ position:relative; display:flex; align-items:center; border-radius:9px; flex:none; }
+.site-header .nav-item:hover,
+.site-header .nav-item.open{ background:var(--bar-hover); }
+.site-header .nav-item.active{ background:var(--bar-active); }
+.site-header .nav-item .nav-link,
+.site-header .nav-item .nav-link.active,
+.site-header .nav-item .nav-link:not(.is-soon):not(.active):hover{ background:transparent; }
+.site-header .nav-item .nav-link{ padding-right:4px; }
+.site-header .nav-item.active .nav-link{ color:var(--bar-ink); }
+.site-header .nav-sub-toggle{
+  appearance:none; border:none; background:transparent; cursor:pointer;
+  color:var(--bar-ink-2); font-size:11px; line-height:1; padding:10px 9px 10px 3px; border-radius:0 9px 9px 0;
+}
+.site-header .nav-item:hover .nav-sub-toggle,
+.site-header .nav-item.active .nav-sub-toggle{ color:var(--bar-ink); }
+.site-header .nav-sub-toggle span{ display:inline-block; transition:transform .15s; }
+.site-header .nav-item.open .nav-sub-toggle span{ transform:rotate(180deg); }
+.site-header .nav-sub-toggle:focus-visible,
+.site-header .nav-sub-link:focus-visible{ outline:2px solid var(--bar-ink); outline-offset:2px; }
+.site-header .nav-sub{
+  position:fixed; z-index:1000; margin:0; padding:6px; list-style:none; min-width:150px;
+  background:var(--bar-bg); border:1px solid var(--bar-border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.35);
+}
+.site-header .nav-sub[hidden]{ display:none; }
+.site-header .nav-sub-link{
+  display:block; padding:8px 12px; border-radius:7px; white-space:nowrap; text-decoration:none;
+  font-family:Arial, Helvetica, sans-serif; font-weight:600; font-size:13.5px; color:var(--bar-ink-2);
+}
+.site-header .nav-sub-link:hover{ background:var(--bar-hover); color:var(--bar-ink); }
+.site-header .nav-sub-link[aria-current="page"]{ background:var(--bar-active); color:var(--bar-ink); }
+@media (max-width:520px){
+  .site-header .nav-item .nav-link{ padding-right:3px; }
+  .site-header .nav-sub-toggle{ padding-right:7px; }
+}
+
 /* ---------------------------------------------------------------- voettekst */
 footer.site-footer{
   display:block;

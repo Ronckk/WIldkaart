@@ -31,16 +31,32 @@ PAGES = {
     'over.html':    {'active': None,      'notes': []},
     '404.html':     {'active': None,      'notes': []},
     'melden.html':  {'active': None,      'notes': []},
+    'voorspelling.html': {'active': 'voorspelling', 'notes': []},
 }
 
 MENU = [('home', 'Home', './'), ('wolven', 'Wolven', 'wolven'), ('zwijnen', 'Zwijnen', 'zwijnen'), ('herten', 'Herten', 'herten')]
 
+# submenu's onder een hoofditem: hoofditem -> [(sleutel, label, adres)]
+SUBMENU = {'wolven': [('voorspelling', 'Voorspelling', 'voorspelling')]}
+
 
 def nav_html(active):
     def item(key, label, href):
+        subs = SUBMENU.get(key, [])
+        in_sub = any(active == k for k, _, _ in subs)      # we zijn op een subpagina: het hoofditem is "ouder" van de huidige pagina
         if active == key:
-            return '<button type="button" class="nav-link active" aria-current="page">%s</button>' % label
-        return '<a href="%s" class="nav-link">%s</a>' % (href, label)
+            link = '<button type="button" class="nav-link active" aria-current="page">%s</button>' % label
+        else:
+            link = '<a href="%s" class="nav-link">%s</a>' % (href, label)
+        if not subs:
+            return link
+        sub_id = 'navSub-' + key
+        lis = '\n          '.join(
+            '<li><a href="%s" class="nav-sub-link"%s>%s</a></li>' % (h, ' aria-current="page"' if active == k else '', l) for k, l, h in subs)
+        return ('<div class="nav-item has-sub%s">\n        %s\n'
+                '        <button type="button" class="nav-sub-toggle" aria-label="Submenu van %s" aria-expanded="false" aria-controls="%s"><span aria-hidden="true">&#9662;</span></button>\n'
+                '        <ul class="nav-sub" id="%s" hidden>\n          %s\n        </ul>\n      </div>'
+                % (' active' if (active == key or in_sub) else '', link, label, sub_id, sub_id, lis))
     links = [item(*m) for m in MENU]
     links.append(item('overig', 'Overig', 'overig'))
     return '''<header class="site-header"><div class="site-header-inner">

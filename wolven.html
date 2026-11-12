@@ -41,7 +41,13 @@
   <nav class="navbar" aria-label="Hoofdmenu">
     <div class="nav-links">
       <a href="./" class="nav-link">Home</a>
-      <button type="button" class="nav-link active" aria-current="page">Wolven</button>
+      <div class="nav-item has-sub active">
+        <button type="button" class="nav-link active" aria-current="page">Wolven</button>
+        <button type="button" class="nav-sub-toggle" aria-label="Submenu van Wolven" aria-expanded="false" aria-controls="navSub-wolven"><span aria-hidden="true">&#9662;</span></button>
+        <ul class="nav-sub" id="navSub-wolven" hidden>
+          <li><a href="voorspelling" class="nav-sub-link">Voorspelling</a></li>
+        </ul>
+      </div>
       <a href="zwijnen" class="nav-link">Zwijnen</a>
       <a href="herten" class="nav-link">Herten</a>
       <a href="overig" class="nav-link">Overig</a>

@@ -30,4 +30,43 @@
       window.scrollTo({ top:0, behavior:'smooth' });
     });
   }
+  // ---- submenu's in de menubalk (Wolven > Voorspelling): pijltje of (op een computer) zweven klapt ze uit ----
+  var openItem = null, closeTimer = null;
+  function setOpen(item, on){
+    var toggle = item.querySelector('.nav-sub-toggle'), sub = item.querySelector('.nav-sub');
+    if (!toggle || !sub) return;
+    if (on){
+      var r = item.getBoundingClientRect();
+      sub.hidden = false;
+      sub.style.top = Math.round(r.bottom - 2) + 'px';
+      sub.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - sub.offsetWidth - 8)) + 'px';
+    } else {
+      sub.hidden = true;
+    }
+    item.classList.toggle('open', on);
+    toggle.setAttribute('aria-expanded', on ? 'true' : 'false');
+    openItem = on ? item : (openItem === item ? null : openItem);
+  }
+  function closeAll(){ if (openItem) setOpen(openItem, false); }
+  var canHover = window.matchMedia && window.matchMedia('(hover:hover)').matches;
+  Array.prototype.forEach.call(document.querySelectorAll('.nav-item.has-sub'), function(item){
+    item.querySelector('.nav-sub-toggle').addEventListener('click', function(e){
+      e.stopPropagation();
+      var on = !item.classList.contains('open');
+      closeAll();
+      setOpen(item, on);
+    });
+    if (canHover){
+      item.addEventListener('mouseenter', function(){ clearTimeout(closeTimer); if (!item.classList.contains('open')){ closeAll(); setOpen(item, true); } });
+      item.addEventListener('mouseleave', function(){ closeTimer = setTimeout(function(){ setOpen(item, false); }, 180); });
+      item.querySelector('.nav-sub').addEventListener('mouseenter', function(){ clearTimeout(closeTimer); });
+      item.querySelector('.nav-sub').addEventListener('mouseleave', function(){ closeTimer = setTimeout(function(){ setOpen(item, false); }, 180); });
+    }
+  });
+  document.addEventListener('click', closeAll);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && openItem){ var t = openItem.querySelector('.nav-sub-toggle'); closeAll(); t.focus(); }
+  });
+  window.addEventListener('resize', closeAll);
+  window.addEventListener('scroll', closeAll, { passive:true });
 })();

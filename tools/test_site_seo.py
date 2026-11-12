@@ -18,6 +18,10 @@ BASE = 'https://wildkaart.rlode.nl/'
 INDEXABLE = {'index.html': '', 'wolven.html': 'wolven', 'zwijnen.html': 'zwijnen', 'herten.html': 'herten', 'overig.html': 'overig', 'over.html': 'over', 'melden.html': 'melden'}
 
 
+# pagina's die nog leeg zijn: wel in menu en publicatie, maar (nog) niet voor zoekmachines en niet in de sitemap
+NOINDEX = ['voorspelling.html']
+
+
 def read(name):
     return (ROOT / name).read_text(encoding='utf-8')
 
@@ -140,6 +144,22 @@ class SeoTest(unittest.TestCase):
         import subprocess, sys
         r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'build_shell.py'), '--check'], capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_blank_forecast_page_is_published_but_not_indexed(self):
+        s = read('voorspelling.html')
+        self.assertIn('noindex', meta(s, 'name', 'robots'))
+        self.assertNotIn('rel="canonical"', s)
+        self.assertEqual(len(re.findall(r'<h1[ >]', s)), 1)
+        self.assertIn('voorspelling.html', read('.github/workflows/site.yml'))
+        self.assertNotIn('voorspelling', read('sitemap.xml'))
+        self.assertIn('href="assets/shell.css"', s)
+
+    def test_wolven_submenu_links_to_the_forecast_page_on_every_page(self):
+        for page in list(INDEXABLE) + ['404.html'] + NOINDEX:
+            with self.subTest(page=page):
+                s = read(page)
+                self.assertEqual(len(re.findall(r'<a href="voorspelling" class="nav-sub-link"', s)), 1)
+                self.assertIn('Submenu van Wolven', s)
 
     def test_every_page_links_the_shell_stylesheet_and_has_both_blocks(self):
         for page in list(INDEXABLE) + ['404.html']:
